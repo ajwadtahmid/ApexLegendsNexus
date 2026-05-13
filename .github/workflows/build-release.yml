@@ -88,11 +88,19 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release -v
 
+      - name: Install NSIS
+        run: choco install nsis -y
+
+      - name: Build Windows Installer
+        run: |
+          $env:GITHUB_WORKSPACE = "${{ github.workspace }}"
+          & 'C:\Program Files (x86)\NSIS\makensis.exe' "${{ github.workspace }}\windows\installer\apex_legends_nexus.nsi"
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: apex-legends-nexus-windows
-          path: build/windows/x64/runner/Release/
+          path: apex-legends-nexus-installer.exe
 
   build-linux:
     needs: test
@@ -210,7 +218,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            windows-build/apex_legends_nexus.exe
+            windows-build/apex-legends-nexus-installer.exe
             linux-build/*.AppImage
             android-build/app-release.aab
           draft: true
