@@ -22,6 +22,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Create .env from secrets
+        run: |
+          echo "PROXY_URL=${{ secrets.PROXY_URL }}" > .env
+          echo "CLIENT_TOKEN=${{ secrets.CLIENT_TOKEN }}" >> .env
+
+      - name: Generate env code
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Analyze
         run: flutter analyze
 
@@ -46,6 +54,14 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Create .env from secrets
+        run: |
+          echo "PROXY_URL=${{ secrets.PROXY_URL }}" > .env
+          echo "CLIENT_TOKEN=${{ secrets.CLIENT_TOKEN }}" >> .env
+
+      - name: Generate env code
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Set up Android signing
         env:
@@ -84,6 +100,14 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Create .env from secrets
+        run: |
+          "PROXY_URL=${{ secrets.PROXY_URL }}" | Out-File -FilePath .env -Encoding utf8
+          "CLIENT_TOKEN=${{ secrets.CLIENT_TOKEN }}" | Add-Content -Path .env -Encoding utf8
+
+      - name: Generate env code
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build Windows
         run: flutter build windows --release -v
@@ -136,6 +160,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Create .env from secrets
+        run: |
+          echo "PROXY_URL=${{ secrets.PROXY_URL }}" > .env
+          echo "CLIENT_TOKEN=${{ secrets.CLIENT_TOKEN }}" >> .env
+
+      - name: Generate env code
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Build Linux
         run: flutter build linux --release -v
 
@@ -161,6 +193,7 @@ jobs:
             '#!/bin/bash' \
             'APPDIR="$(cd "$(dirname "$0")" && pwd)"' \
             'export LD_LIBRARY_PATH="$APPDIR/usr/bin/lib:$LD_LIBRARY_PATH"' \
+            'cd "$APPDIR/usr/bin"' \
             'exec "$APPDIR/usr/bin/apex_legends_nexus" "$@"' \
             > AppDir/AppRun
           chmod +x AppDir/AppRun

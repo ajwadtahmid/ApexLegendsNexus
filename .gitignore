@@ -46,6 +46,7 @@ app.*.map.json
 
 # Environment variables & secrets
 .env
+lib/env/env.g.dart
 *.keystore
 *.jks
 key.properties

@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../env/env.dart';
 import '../utils/api_cache.dart';
 import '../utils/error_messages.dart';
 
@@ -11,8 +11,8 @@ class ApiService {
   late final ApiCache _cache;
 
   ApiService(SharedPreferences prefs) {
-    final proxyUrl = dotenv.env['PROXY_URL'] ?? '';
-    final clientToken = dotenv.env['CLIENT_TOKEN'] ?? '';
+    final proxyUrl = Env.proxyUrl;
+    final clientToken = Env.clientToken;
     _dio = Dio(
       BaseOptions(
         baseUrl: proxyUrl,
