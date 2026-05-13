@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ajwadtahmid.apex_legends_nexus"
+    namespace = "com.ajwadtahmid.apexlegendsnexus"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -40,7 +40,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ajwadtahmid.apex_legends_nexus"
+        applicationId = "com.ajwadtahmid.apexlegendsnexus"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

@@ -199,16 +199,16 @@ jobs:
           chmod +x AppDir/AppRun
 
           mkdir -p AppDir/usr/share/applications
-          printf '[Desktop Entry]\nType=Application\nName=Apex Legends Nexus\nComment=Apex Legends companion app for player stats and game info\nExec=apex_legends_nexus\nIcon=com.ajwadtahmid.apex_legends_nexus\nCategories=Utility;Game;\nTerminal=false\n' \
-            > AppDir/usr/share/applications/com.ajwadtahmid.apex_legends_nexus.desktop
+          printf '[Desktop Entry]\nType=Application\nName=Apex Legends Nexus\nComment=Apex Legends companion app for player stats and game info\nExec=apex_legends_nexus\nIcon=com.ajwadtahmid.apexlegendsnexus\nCategories=Utility;Game;\nTerminal=false\n' \
+            > AppDir/usr/share/applications/com.ajwadtahmid.apexlegendsnexus.desktop
 
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
           cp assets/logos/flathub/icon_256.png \
-            AppDir/usr/share/icons/hicolor/256x256/apps/com.ajwadtahmid.apex_legends_nexus.png
+            AppDir/usr/share/icons/hicolor/256x256/apps/com.ajwadtahmid.apexlegendsnexus.png
 
           mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps
           cp assets/logos/flathub/icon_512.png \
-            AppDir/usr/share/icons/hicolor/512x512/apps/com.ajwadtahmid.apex_legends_nexus.png
+            AppDir/usr/share/icons/hicolor/512x512/apps/com.ajwadtahmid.apexlegendsnexus.png
 
           export VERSION="${GITHUB_REF#refs/tags/v}"
           ./linuxdeploy/linuxdeploy-x86_64.AppImage \

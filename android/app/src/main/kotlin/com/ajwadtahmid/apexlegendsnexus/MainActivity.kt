@@ -1,4 +1,4 @@
-package com.ajwadtahmid.apex_legends_nexus
+package com.ajwadtahmid.apexlegendsnexus
 
 import io.flutter.embedding.android.FlutterActivity
 
