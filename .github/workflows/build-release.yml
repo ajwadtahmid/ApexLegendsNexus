@@ -1,0 +1,229 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+  build-android:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Set up Android signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/key.properties
+
+      - name: Build Android AAB
+        run: flutter build appbundle --release
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apex-legends-nexus-android
+          path: build/app/outputs/bundle/release/app-release.aab
+
+  build-windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Windows
+        run: flutter build windows --release -v
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apex-legends-nexus-windows
+          path: build/windows/x64/runner/Release/
+
+  build-linux:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libx11-dev \
+            pkg-config \
+            cmake \
+            ninja-build \
+            clang \
+            libxinerama-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libxkbcommon-dev \
+            libssl-dev \
+            libsecret-1-dev \
+            libsqlite3-dev \
+            libsqlite3-0 \
+            zsync
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Linux
+        run: flutter build linux --release -v
+
+      - name: Install linuxdeploy
+        run: |
+          mkdir -p linuxdeploy
+          cd linuxdeploy
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage
+          chmod +x *.AppImage
+          cd ..
+          echo "APPIMAGE_EXTRACT_AND_RUN=1" >> $GITHUB_ENV
+
+      - name: Create AppImage
+        run: |
+          BUNDLE=build/linux/x64/release/bundle
+
+          # Copy entire Flutter bundle — preserves relative lib/ path the binary expects
+          mkdir -p AppDir/usr/bin
+          cp -r $BUNDLE/* AppDir/usr/bin/
+          chmod +x AppDir/usr/bin/apex_legends_nexus
+
+          # AppRun — sets LD_LIBRARY_PATH so bundled libs are found at runtime
+          cat > AppDir/AppRun << 'APPRUN'
+#!/bin/bash
+APPDIR="$(cd "$(dirname "$0")" && pwd)"
+export LD_LIBRARY_PATH="$APPDIR/usr/bin/lib:$LD_LIBRARY_PATH"
+exec "$APPDIR/usr/bin/apex_legends_nexus" "$@"
+APPRUN
+          chmod +x AppDir/AppRun
+
+          # Desktop file (no leading spaces — desktop file format is strict)
+          mkdir -p AppDir/usr/share/applications
+          cat > AppDir/usr/share/applications/com.ajwadtahmid.apex_legends_nexus.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Apex Legends Nexus
+Comment=Apex Legends companion app for player stats and game info
+Exec=apex_legends_nexus
+Icon=com.ajwadtahmid.apex_legends_nexus
+Categories=Utility;Games;
+Terminal=false
+EOF
+
+          # Icon
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          cp assets/logos/flathub/icon_256.png \
+            AppDir/usr/share/icons/hicolor/256x256/apps/com.ajwadtahmid.apex_legends_nexus.png
+
+          mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps
+          cp assets/logos/flathub/icon_512.png \
+            AppDir/usr/share/icons/hicolor/512x512/apps/com.ajwadtahmid.apex_legends_nexus.png
+
+          export VERSION="${GITHUB_REF#refs/tags/v}"
+          ./linuxdeploy/linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --output appimage
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apex-legends-nexus-linux
+          path: "*.AppImage"
+
+  create-release:
+    needs: [build-windows, build-linux, build-android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: apex-legends-nexus-windows
+          path: windows-build/
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: apex-legends-nexus-linux
+          path: linux-build/
+
+      - name: Download Android artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: apex-legends-nexus-android
+          path: android-build/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            windows-build/apex_legends_nexus.exe
+            linux-build/*.AppImage
+            android-build/app-release.aab
+          draft: true
+          generate_release_notes: true

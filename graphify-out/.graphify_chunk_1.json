@@ -1,0 +1,30 @@
+{
+  "nodes": [
+    {"id": "main_entry_point", "label": "Main Entry Point", "file_type": "code", "source_file": "lib/main.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "apex_legends_app", "label": "ApexLegendsApp Root Widget", "file_type": "code", "source_file": "lib/app.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "app_shell", "label": "App Shell - 4-Tab Navigation", "file_type": "code", "source_file": "lib/app.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "home_screen", "label": "Home Screen Tab", "file_type": "code", "source_file": "lib/screens/home/home_screen.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "stats_screen", "label": "Stats Screen Tab", "file_type": "code", "source_file": "lib/screens/stats/stats_screen.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "search_screen", "label": "Search Screen Tab", "file_type": "code", "source_file": "lib/screens/search/search_screen.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "settings_screen", "label": "Settings Screen Tab", "file_type": "code", "source_file": "lib/screens/settings/settings_screen.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "player_profile_widget", "label": "Player Profile Card Widget", "file_type": "code", "source_file": "lib/widgets/player_profile.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "graph_card_widget", "label": "RP Graph Card Widget", "file_type": "code", "source_file": "lib/widgets/graph_card.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "api_service", "label": "HTTP Client & Cache Layer", "file_type": "code", "source_file": "lib/services/api_service.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "riverpod_state_management", "label": "Riverpod State Management Pattern", "file_type": "code", "source_file": "lib/providers/", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "map_provider", "label": "Map Rotation Data Provider", "file_type": "code", "source_file": "lib/providers/map_provider.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "player_provider", "label": "Player Stats Data Providers", "file_type": "code", "source_file": "lib/providers/player_provider.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "server_provider", "label": "Server Status Data Provider", "file_type": "code", "source_file": "lib/providers/server_provider.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "news_provider", "label": "News Article Data Provider", "file_type": "code", "source_file": "lib/providers/news_provider.dart", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}
+  ],
+  "edges": [
+    {"source": "main_entry_point", "target": "apex_legends_app", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/main.dart", "source_location": null, "weight": 1.0},
+    {"source": "app_shell", "target": "home_screen", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/app.dart", "source_location": null, "weight": 1.0},
+    {"source": "home_screen", "target": "map_provider", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/screens/home/home_screen.dart", "source_location": null, "weight": 1.0},
+    {"source": "stats_screen", "target": "player_provider", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/screens/stats/stats_screen.dart", "source_location": null, "weight": 1.0}
+  ],
+  "hyperedges": [
+    {"id": "tab_navigation_architecture", "label": "4-Tab Navigation Screen Architecture", "nodes": ["app_shell", "home_screen", "stats_screen", "search_screen", "settings_screen"], "relation": "participate_in", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/app.dart"}
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
