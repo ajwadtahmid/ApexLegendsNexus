@@ -1,6 +1,6 @@
 # Apex Legends Nexus
 
-**Master every legend. Track every rank.**
+**Your complete Apex Legends companion.**
 
 ## Description
 
