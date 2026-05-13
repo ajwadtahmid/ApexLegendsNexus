@@ -144,13 +144,10 @@ jobs:
       - name: Create AppImage
         run: |
           BUNDLE=build/linux/x64/release/bundle
-
-          # Copy entire Flutter bundle - preserves relative lib/ path the binary expects
           mkdir -p AppDir/usr/bin
           cp -r $BUNDLE/* AppDir/usr/bin/
           chmod +x AppDir/usr/bin/apex_legends_nexus
 
-          # AppRun - sets LD_LIBRARY_PATH so bundled libs are found at runtime
           mkdir -p AppDir
           printf '%s\n' \
             '#!/bin/bash' \
@@ -160,20 +157,10 @@ jobs:
             > AppDir/AppRun
           chmod +x AppDir/AppRun
 
-          # Desktop file (no leading spaces - desktop file format is strict)
           mkdir -p AppDir/usr/share/applications
-          cat > AppDir/usr/share/applications/com.ajwadtahmid.apex_legends_nexus.desktop << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=Apex Legends Nexus
-Comment=Apex Legends companion app for player stats and game info
-Exec=apex_legends_nexus
-Icon=com.ajwadtahmid.apex_legends_nexus
-Categories=Utility;Games;
-Terminal=false
-EOF
+          printf '[Desktop Entry]\nType=Application\nName=Apex Legends Nexus\nComment=Apex Legends companion app for player stats and game info\nExec=apex_legends_nexus\nIcon=com.ajwadtahmid.apex_legends_nexus\nCategories=Utility;Games;\nTerminal=false\n' \
+            > AppDir/usr/share/applications/com.ajwadtahmid.apex_legends_nexus.desktop
 
-          # Icon
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
           cp assets/logos/flathub/icon_256.png \
             AppDir/usr/share/icons/hicolor/256x256/apps/com.ajwadtahmid.apex_legends_nexus.png
