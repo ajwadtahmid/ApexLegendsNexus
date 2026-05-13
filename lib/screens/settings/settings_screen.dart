@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../constants/api_constants.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/notification_service.dart';
@@ -331,10 +332,16 @@ class SettingsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _InfoRow(label: 'Version', value: '1.0.0'),
+                FutureBuilder<PackageInfo>(
+                  future: PackageInfo.fromPlatform(),
+                  builder: (ctx, snap) {
+                    final version = snap.data?.version ?? '—';
+                    return _InfoRow(label: 'Version', value: version);
+                  },
+                ),
                 const Divider(color: AppTheme.surface2, height: 24),
                 const Text(
-                  'Unofficial fan project — not affiliated with, endorsed by, or sponsored by Electronic Arts or Respawn Entertainment.',
+                  'This is an unofficial companion app for Apex Legends. It is not made by, affiliated with, or endorsed by Electronic Arts or Respawn Entertainment.',
                   style: TextStyle(
                     color: AppTheme.muted,
                     fontSize: 12,
@@ -347,20 +354,31 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: AppTheme.md),
 
-          // ── Attribution ──────────────────────────────────────────
-          _SectionLabel(label: 'ATTRIBUTION'),
+          // ── Data Sources ─────────────────────────────────────────
+          _SectionLabel(label: 'DATA SOURCES'),
           _SettingsCard(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Padding(
+                  padding: EdgeInsets.only(bottom: AppTheme.sm),
+                  child: Text(
+                    'This app gets player stats, map rotations, and server status from:',
+                    style: TextStyle(color: AppTheme.muted, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: AppTheme.sm),
                 _LinkRow(
                   label: 'apexlegendsapi.com',
-                  subtitle: 'Stats & map data provider',
+                  subtitle:
+                      'Player stats & legend data are provided by this API.',
                   url: 'https://apexlegendsapi.com',
                 ),
                 const Divider(color: AppTheme.surface2, height: 24),
                 _LinkRow(
                   label: 'apexlegendsstatus.com',
-                  subtitle: 'Server status data provider',
+                  subtitle:
+                      'Server status. You can check this website for more information.',
                   url: 'https://apexlegendsstatus.com',
                 ),
               ],
