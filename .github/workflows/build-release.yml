@@ -152,12 +152,12 @@ jobs:
 
           # AppRun - sets LD_LIBRARY_PATH so bundled libs are found at runtime
           mkdir -p AppDir
-          cat > AppDir/AppRun << 'EOF'
-#!/bin/bash
-APPDIR="$(cd "$(dirname "$0")" && pwd)"
-export LD_LIBRARY_PATH="$APPDIR/usr/bin/lib:$LD_LIBRARY_PATH"
-exec "$APPDIR/usr/bin/apex_legends_nexus" "$@"
-EOF
+          printf '%s\n' \
+            '#!/bin/bash' \
+            'APPDIR="$(cd "$(dirname "$0")" && pwd)"' \
+            'export LD_LIBRARY_PATH="$APPDIR/usr/bin/lib:$LD_LIBRARY_PATH"' \
+            'exec "$APPDIR/usr/bin/apex_legends_nexus" "$@"' \
+            > AppDir/AppRun
           chmod +x AppDir/AppRun
 
           # Desktop file (no leading spaces - desktop file format is strict)
