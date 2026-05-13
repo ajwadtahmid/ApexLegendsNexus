@@ -158,7 +158,7 @@ jobs:
           chmod +x AppDir/AppRun
 
           mkdir -p AppDir/usr/share/applications
-          printf '[Desktop Entry]\nType=Application\nName=Apex Legends Nexus\nComment=Apex Legends companion app for player stats and game info\nExec=apex_legends_nexus\nIcon=com.ajwadtahmid.apex_legends_nexus\nCategories=Utility;Games;\nTerminal=false\n' \
+          printf '[Desktop Entry]\nType=Application\nName=Apex Legends Nexus\nComment=Apex Legends companion app for player stats and game info\nExec=apex_legends_nexus\nIcon=com.ajwadtahmid.apex_legends_nexus\nCategories=Utility;Game;\nTerminal=false\n' \
             > AppDir/usr/share/applications/com.ajwadtahmid.apex_legends_nexus.desktop
 
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
