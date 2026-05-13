@@ -4,11 +4,9 @@
 
 ## Description
 
-Apex Legends Nexus is your complete companion app for Apex Legends. Whether you're grinding ranked, tracking progress across multiple legends, or just want to know which map is loading next, Nexus gives you instant access to everything that matters.
+Apex Legends Nexus is your complete companion app for Apex Legends. Whether you're grinding ranked, tracking progress across multiple legends, or just want to know which map is loading next, Apex Legends Nexus gives you instant access to everything that matters.
 
-Search for any player in seconds and dive deep into their statistics — rank progression, legend winrates, lifetime kills, seasonal performance, and more. Get real-time updates on map rotations so you're never caught off guard. Monitor server health across all regions to understand connection quality before you queue.
-
-Built for competitive and casual players alike, Nexus runs on everything — your phone during queue, your desktop while you play, even Linux if that's your thing. No ads. No login required. Just pure, fast, local-first Apex data at your fingertips.
+Search for any player in seconds and dive deep into their statistics — rank progression and equipped tracker info. Get real-time updates on map rotations so you're never caught off guard. Monitor server health across all regions to understand connection quality before you queue. No login required. Just pure, fast, local-first Apex Legends data at your fingertips.
 
 ## ✨ Features
 
