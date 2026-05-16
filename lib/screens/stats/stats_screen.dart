@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:toastification/toastification.dart';
 import '../../models/player_stats.dart';
 import '../../providers/api_provider.dart';
 import '../../providers/player_provider.dart';
@@ -92,11 +93,46 @@ class _StatsView extends ConsumerStatefulWidget {
 class _StatsViewState extends ConsumerState<_StatsView> {
   Timer? _refreshTimer;
   bool _syncing = false;
+  bool _toastShown = false;
+  late DateTime _appLaunchTime;
 
   @override
   void initState() {
     super.initState();
+    _appLaunchTime = ref.read(appLaunchTimeProvider);
     _setupTimer(widget.settings.statsRefreshMinutes);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showHelpfulTipsIfNeeded();
+    });
+  }
+
+  void _showHelpfulTipsIfNeeded() {
+    final settings = widget.settings;
+    final isRecentlyLaunched =
+        DateTime.now().difference(_appLaunchTime).inSeconds < 2;
+    if (settings.helpfulTipsEnabled && !_toastShown && isRecentlyLaunched) {
+      setState(() => _toastShown = true);
+      toastification.show(
+        context: context,
+        type: ToastificationType.info,
+        style: ToastificationStyle.flat,
+        autoCloseDuration: const Duration(seconds: 15),
+        title: const Text('Equip Your Trackers'),
+        description: const Text(
+          'Equip trackers with stats you want to track for each legend. We recommend Apex Kills, Apex Damage, and Apex Wins.',
+        ),
+        icon: const Icon(Icons.lightbulb_outline),
+        borderRadius: BorderRadius.circular(12.0),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x07000000),
+            blurRadius: 16,
+            offset: Offset(0, 16),
+            spreadRadius: 0,
+          ),
+        ],
+      );
+    }
   }
 
   @override
@@ -256,13 +292,26 @@ class _StatsBodyState extends ConsumerState<_StatsBody> {
   }
 
   int? _computeTodayDelta(List<StatSnapshot> snaps) {
+    if (snaps.isEmpty) return null;
     final now = DateTime.now();
-    final midnight = DateTime(now.year, now.month, now.day);
-    final beforeToday = snaps
-        .where((s) => s.timestamp.isBefore(midnight))
+    final last24Hours = now.subtract(const Duration(hours: 24));
+
+    // Find the most recent snapshot from 24+ hours ago
+    final before24h = snaps
+        .where((s) => s.timestamp.isBefore(last24Hours))
         .toList();
-    if (beforeToday.isEmpty) return null;
-    return widget.stats.rankScore - beforeToday.last.rp;
+
+    if (before24h.isNotEmpty) {
+      // Use the last snapshot from 24+ hours ago as baseline
+      return widget.stats.rankScore - before24h.last.rp;
+    }
+
+    // All snapshots are within the last 24 hours, use the first one as baseline
+    if (snaps.isNotEmpty) {
+      return widget.stats.rankScore - snaps.first.rp;
+    }
+
+    return null;
   }
 
   @override
@@ -329,6 +378,7 @@ class _PlayerLookupFormState extends ConsumerState<_PlayerLookupForm> {
   String _platform = 'PC';
   bool _loading = false;
   String? _error;
+  bool _searchByUid = false;
 
   @override
   void initState() {
@@ -346,10 +396,43 @@ class _PlayerLookupFormState extends ConsumerState<_PlayerLookupForm> {
     super.dispose();
   }
 
+  Future<void> _toggleUidSearch(bool value) async {
+    if (value && !_searchByUid) {
+      final prefs = ref.read(sharedPreferencesProvider);
+      final shownWarning = prefs.getBool('uid_search_warning_shown') ?? false;
+
+      if (!shownWarning) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('Finding Your UID'),
+              content: const Text(
+                'You can find the UID from deep search on apexlegendsstatus.com',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Got it'),
+                ),
+              ],
+            ),
+          );
+          await prefs.setBool('uid_search_warning_shown', true);
+        }
+      }
+    }
+    setState(() => _searchByUid = value);
+  }
+
   Future<void> _submit() async {
-    final name = _controller.text.trim();
-    if (name.isEmpty) {
-      setState(() => _error = 'Enter a player name.');
+    final query = _controller.text.trim();
+    if (query.isEmpty) {
+      setState(
+        () => _error = _searchByUid
+            ? 'Enter a player UID.'
+            : 'Enter a player name.',
+      );
       return;
     }
     setState(() {
@@ -357,17 +440,31 @@ class _PlayerLookupFormState extends ConsumerState<_PlayerLookupForm> {
       _error = null;
     });
     try {
-      final result = await ref
-          .read(playerServiceProvider)
-          .nameToUid(name, _platform);
-      await ref
-          .read(playerSettingsProvider.notifier)
-          .setPlayer(result.name, result.uid, _platform);
+      if (_searchByUid) {
+        // Search by UID - get full player stats which includes the name
+        final statsResult = await ref
+            .read(playerServiceProvider)
+            .getPlayerStatsByUid(query, _platform);
+        final stats = statsResult.data;
+        await ref
+            .read(playerSettingsProvider.notifier)
+            .setPlayer(stats.name, stats.uid, _platform);
+      } else {
+        // Search by name - convert name to UID
+        final result = await ref
+            .read(playerServiceProvider)
+            .nameToUid(query, _platform);
+        await ref
+            .read(playerSettingsProvider.notifier)
+            .setPlayer(result.name, result.uid, _platform);
+      }
       widget.onSuccess?.call();
     } catch (_) {
       if (mounted) {
         setState(
-          () => _error = 'Player not found. Check the name and platform.',
+          () => _error = _searchByUid
+              ? 'Player UID not found. Check the UID and platform.'
+              : 'Player not found. Check the name and platform.',
         );
       }
     } finally {
@@ -386,9 +483,12 @@ class _PlayerLookupFormState extends ConsumerState<_PlayerLookupForm> {
           onSubmitted: (_) => _submit(),
           textInputAction: TextInputAction.done,
           style: const TextStyle(color: AppTheme.textPrimary),
-          decoration: const InputDecoration(
-            hintText: 'In-game name',
-            prefixIcon: Icon(Icons.person_outline, color: AppTheme.muted),
+          decoration: InputDecoration(
+            hintText: _searchByUid ? 'Numeric UID' : 'In-game name',
+            prefixIcon: Icon(
+              _searchByUid ? Icons.numbers : Icons.person_outline,
+              color: AppTheme.muted,
+            ),
           ),
         ),
         const SizedBox(height: AppTheme.md),
@@ -396,6 +496,24 @@ class _PlayerLookupFormState extends ConsumerState<_PlayerLookupForm> {
           selected: _platform,
           onChanged: (p) => setState(() => _platform = p),
           expanded: true,
+        ),
+        const SizedBox(height: AppTheme.sm),
+        Row(
+          children: [
+            const Icon(Icons.numbers, size: 16, color: AppTheme.muted),
+            const SizedBox(width: AppTheme.sm),
+            const Expanded(
+              child: Text(
+                'Search by UID',
+                style: TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+              ),
+            ),
+            Switch(
+              value: _searchByUid,
+              onChanged: _toggleUidSearch,
+              activeThumbColor: AppTheme.accent,
+            ),
+          ],
         ),
         if (_error != null) ...[
           const SizedBox(height: AppTheme.sm),

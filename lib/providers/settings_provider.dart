@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 
+// Track when the app was launched (for showing tips once per session)
+final appLaunchTimeProvider = Provider<DateTime>((ref) {
+  return DateTime.now();
+});
+
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError(
     'sharedPreferencesProvider must be overridden in main',
@@ -18,7 +23,11 @@ class PlayerSettings {
   final int statsRefreshMinutes; // 0 = manual only
   final bool compactLegendCards;
   final int mapNotifyMinutesBefore; // 0 = off, else minutes before rotation
+  final bool notifyPubsMapRotation;
+  final bool notifyRankedMapRotation;
+  final bool notifyMixtapeMapRotation;
   final int defaultTab; // 0=Home 1=Stats 2=Search 3=Settings
+  final bool helpfulTipsEnabled;
 
   const PlayerSettings({
     this.name = '',
@@ -27,7 +36,11 @@ class PlayerSettings {
     this.statsRefreshMinutes = 0,
     this.compactLegendCards = false,
     this.mapNotifyMinutesBefore = 0,
+    this.notifyPubsMapRotation = false,
+    this.notifyRankedMapRotation = false,
+    this.notifyMixtapeMapRotation = false,
     this.defaultTab = 0,
+    this.helpfulTipsEnabled = true,
   });
 
   bool get isPlayerSet => uid.isNotEmpty;
@@ -39,7 +52,11 @@ class PlayerSettings {
     int? statsRefreshMinutes,
     bool? compactLegendCards,
     int? mapNotifyMinutesBefore,
+    bool? notifyPubsMapRotation,
+    bool? notifyRankedMapRotation,
+    bool? notifyMixtapeMapRotation,
     int? defaultTab,
+    bool? helpfulTipsEnabled,
   }) {
     return PlayerSettings(
       name: name ?? this.name,
@@ -49,7 +66,14 @@ class PlayerSettings {
       compactLegendCards: compactLegendCards ?? this.compactLegendCards,
       mapNotifyMinutesBefore:
           mapNotifyMinutesBefore ?? this.mapNotifyMinutesBefore,
+      notifyPubsMapRotation:
+          notifyPubsMapRotation ?? this.notifyPubsMapRotation,
+      notifyRankedMapRotation:
+          notifyRankedMapRotation ?? this.notifyRankedMapRotation,
+      notifyMixtapeMapRotation:
+          notifyMixtapeMapRotation ?? this.notifyMixtapeMapRotation,
       defaultTab: defaultTab ?? this.defaultTab,
+      helpfulTipsEnabled: helpfulTipsEnabled ?? this.helpfulTipsEnabled,
     );
   }
 }
@@ -66,7 +90,11 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
       statsRefreshMinutes: _prefs.getInt('stats_refresh_minutes') ?? 0,
       compactLegendCards: _prefs.getBool('compact_legend_cards') ?? false,
       mapNotifyMinutesBefore: _prefs.getInt('map_notify_minutes') ?? 0,
+      notifyPubsMapRotation: _prefs.getBool('notify_pubs_map_rotation') ?? false,
+      notifyRankedMapRotation: _prefs.getBool('notify_ranked_map_rotation') ?? false,
+      notifyMixtapeMapRotation: _prefs.getBool('notify_mixtape_map_rotation') ?? false,
       defaultTab: _prefs.getInt('default_tab') ?? 0,
+      helpfulTipsEnabled: _prefs.getBool('helpful_tips_enabled') ?? true,
     );
   }
 
@@ -94,9 +122,29 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
     state = state.copyWith(mapNotifyMinutesBefore: minutes);
   }
 
+  void setNotifyPubsMapRotation(bool notify) {
+    _prefs.setBool('notify_pubs_map_rotation', notify);
+    state = state.copyWith(notifyPubsMapRotation: notify);
+  }
+
+  void setNotifyRankedMapRotation(bool notify) {
+    _prefs.setBool('notify_ranked_map_rotation', notify);
+    state = state.copyWith(notifyRankedMapRotation: notify);
+  }
+
+  void setNotifyMixtapeMapRotation(bool notify) {
+    _prefs.setBool('notify_mixtape_map_rotation', notify);
+    state = state.copyWith(notifyMixtapeMapRotation: notify);
+  }
+
   void setDefaultTab(int tab) {
     _prefs.setInt('default_tab', tab);
     state = state.copyWith(defaultTab: tab);
+  }
+
+  void setHelpfulTipsEnabled(bool enabled) {
+    _prefs.setBool('helpful_tips_enabled', enabled);
+    state = state.copyWith(helpfulTipsEnabled: enabled);
   }
 
   Future<void> clear() async {

@@ -7,12 +7,17 @@ import 'settings_provider.dart';
 final _uidPattern = RegExp(r'^\d+$');
 
 final searchPlayerProvider =
-    FutureProvider.family<ApiResult<PlayerStats>, (String, String)>((
+    FutureProvider.family<ApiResult<PlayerStats>, (String, String, bool)>((
       ref,
       params,
     ) async {
-      final (query, platform) = params;
+      final (query, platform, searchByUid) = params;
       final service = ref.watch(playerServiceProvider);
+
+      if (searchByUid) {
+        return service.getPlayerStatsByUid(query.trim(), platform);
+      }
+
       final isUid = _uidPattern.hasMatch(query.trim());
       if (isUid) {
         return service.getPlayerStatsByUid(query.trim(), platform);

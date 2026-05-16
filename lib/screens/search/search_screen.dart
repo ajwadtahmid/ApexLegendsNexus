@@ -25,11 +25,42 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _controller = TextEditingController();
   String _platform = ApiConstants.defaultPlatform;
+  bool _searchByUid = false;
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleUidSearch(bool value) async {
+    if (value && !_searchByUid) {
+      // First time selecting UID search - show warning
+      final prefs = ref.read(sharedPreferencesProvider);
+      final shownWarning = prefs.getBool('uid_search_warning_shown') ?? false;
+
+      if (!shownWarning) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('Finding Your UID'),
+              content: const Text(
+                'You can find the UID from deep search on apexlegendsstatus.com',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Got it'),
+                ),
+              ],
+            ),
+          );
+          await prefs.setBool('uid_search_warning_shown', true);
+        }
+      }
+    }
+    setState(() => _searchByUid = value);
   }
 
   void _search([String? query, String? platform]) {
@@ -39,7 +70,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       context,
       MaterialPageRoute(
         builder: (_) =>
-            _PlayerResultPage(query: q, platform: platform ?? _platform),
+            _PlayerResultPage(query: q, platform: platform ?? _platform, searchByUid: _searchByUid),
       ),
     );
   }
@@ -59,7 +90,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           _SearchBar(
             controller: _controller,
             platform: _platform,
+            searchByUid: _searchByUid,
             onPlatformChanged: (p) => setState(() => _platform = p),
+            onSearchByUidChanged: _toggleUidSearch,
             onSearch: _search,
           ),
           Expanded(child: _FavoritesPane(onPick: _pickFavorite)),
@@ -72,13 +105,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 class _SearchBar extends StatelessWidget {
   final TextEditingController controller;
   final String platform;
+  final bool searchByUid;
   final ValueChanged<String> onPlatformChanged;
+  final ValueChanged<bool> onSearchByUidChanged;
   final VoidCallback onSearch;
 
   const _SearchBar({
     required this.controller,
     required this.platform,
+    required this.searchByUid,
     required this.onPlatformChanged,
+    required this.onSearchByUidChanged,
     required this.onSearch,
   });
 
@@ -110,6 +147,24 @@ class _SearchBar extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.sm),
           PlatformPicker(selected: platform, onChanged: onPlatformChanged),
+          const SizedBox(height: AppTheme.sm),
+          Row(
+            children: [
+              const Icon(Icons.numbers, size: 16, color: AppTheme.muted),
+              const SizedBox(width: AppTheme.sm),
+              const Expanded(
+                child: Text(
+                  'Search by UID',
+                  style: TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+                ),
+              ),
+              Switch(
+                value: searchByUid,
+                onChanged: onSearchByUidChanged,
+                activeThumbColor: AppTheme.accent,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -121,8 +176,13 @@ class _SearchBar extends StatelessWidget {
 class _PlayerResultPage extends ConsumerStatefulWidget {
   final String query;
   final String platform;
+  final bool searchByUid;
 
-  const _PlayerResultPage({required this.query, required this.platform});
+  const _PlayerResultPage({
+    required this.query,
+    required this.platform,
+    this.searchByUid = false,
+  });
 
   @override
   ConsumerState<_PlayerResultPage> createState() => _PlayerResultPageState();
@@ -134,10 +194,14 @@ class _PlayerResultPageState extends ConsumerState<_PlayerResultPage> {
   Future<void> _refresh() async {
     if (_refreshing) return;
     setState(() => _refreshing = true);
-    ref.invalidate(searchPlayerProvider((widget.query, widget.platform)));
+    ref.invalidate(
+      searchPlayerProvider((widget.query, widget.platform, widget.searchByUid)),
+    );
     try {
       await ref.read(
-        searchPlayerProvider((widget.query, widget.platform)).future,
+        searchPlayerProvider(
+          (widget.query, widget.platform, widget.searchByUid),
+        ).future,
       );
     } catch (_) {}
     if (mounted) setState(() => _refreshing = false);
@@ -146,7 +210,9 @@ class _PlayerResultPageState extends ConsumerState<_PlayerResultPage> {
   @override
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(
-      searchPlayerProvider((widget.query, widget.platform)),
+      searchPlayerProvider(
+        (widget.query, widget.platform, widget.searchByUid),
+      ),
     );
     final stats = statsAsync.whenOrNull(data: (result) => result.data);
     final favorites = ref.watch(searchStateProvider).favorites;
@@ -963,7 +1029,7 @@ class _FavoriteTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(
-      searchPlayerProvider((playerRef.query, playerRef.platform)),
+      searchPlayerProvider((playerRef.query, playerRef.platform, false)),
     );
     final stats = statsAsync.whenOrNull(data: (result) => result.data);
 

@@ -22,8 +22,8 @@ class PlayerInfoCard extends StatelessWidget {
     final showDelta = delta != null && delta != 0;
     final deltaColor = (delta ?? 0) >= 0 ? AppTheme.green : AppTheme.red;
     final deltaText = (delta ?? 0) >= 0
-        ? '+$delta RP today'
-        : '$delta RP today';
+        ? '+$delta RP last 24h'
+        : '$delta RP last 24h';
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.md),

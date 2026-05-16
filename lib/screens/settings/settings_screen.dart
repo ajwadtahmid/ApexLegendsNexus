@@ -21,7 +21,7 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(AppTheme.md),
         children: [
           // ── Account ─────────────────────────────────────────────
-          _SectionLabel(label: 'ACCOUNT'),
+          _SectionLabel(label: 'ACCOUNT', icon: Icons.person_outline),
           _SettingsCard(
             child: settings.isPlayerSet
                 ? Column(
@@ -137,7 +137,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppTheme.md),
 
           // ── Preferences ──────────────────────────────────────────
-          _SectionLabel(label: 'PREFERENCES'),
+          _SectionLabel(label: 'PREFERENCES', icon: Icons.tune),
           _SettingsCard(
             child: Column(
               children: [
@@ -206,6 +206,32 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
                 const Divider(color: AppTheme.surface2, height: 24),
+                // Helpful tips
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.lightbulb_outline,
+                      color: AppTheme.textPrimary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppTheme.sm),
+                    const Expanded(
+                      child: Text(
+                        'Helpful tips',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Switch(
+                      value: settings.helpfulTipsEnabled,
+                      onChanged: (v) => ref
+                          .read(playerSettingsProvider.notifier)
+                          .setHelpfulTipsEnabled(v),
+                      activeThumbColor: AppTheme.accent,
+                      activeTrackColor: AppTheme.accent.withAlpha(120),
+                    ),
+                  ],
+                ),
+                const Divider(color: AppTheme.surface2, height: 24),
                 // Default tab on launch
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -245,51 +271,145 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: AppTheme.md),
+          const SizedBox(height: AppTheme.sm),
 
           // ── Notifications ────────────────────────────────────────
-          _SectionLabel(label: 'NOTIFICATIONS'),
+          _SectionLabel(
+            label: 'NOTIFICATIONS',
+            icon: Icons.notifications_outlined,
+          ),
           _SettingsCard(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _pickNotifyBefore(
-                context,
-                ref,
-                settings.mapNotifyMinutesBefore,
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.notifications_outlined,
-                    color: AppTheme.textPrimary,
-                    size: 20,
+            child: Column(
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _pickNotifyBefore(
+                    context,
+                    ref,
+                    settings.mapNotifyMinutesBefore,
                   ),
-                  const SizedBox(width: AppTheme.sm),
-                  const Expanded(
-                    child: Text(
-                      'Map rotation alert',
-                      style: TextStyle(fontSize: 14),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.notifications_outlined,
+                        color: AppTheme.textPrimary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: AppTheme.sm),
+                      const Expanded(
+                        child: Text(
+                          'Map rotation alerts',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      Text(
+                        _notifyLabel(settings.mapNotifyMinutesBefore),
+                        style: const TextStyle(
+                          color: AppTheme.muted,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppTheme.muted,
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(color: AppTheme.surface2, height: 24),
+                // Pubs notifications
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.public,
+                      color: AppTheme.textPrimary,
+                      size: 20,
                     ),
-                  ),
-                  Text(
-                    _notifyLabel(settings.mapNotifyMinutesBefore),
-                    style: const TextStyle(color: AppTheme.muted, fontSize: 14),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: AppTheme.muted,
-                    size: 18,
-                  ),
-                ],
-              ),
+                    const SizedBox(width: AppTheme.sm),
+                    const Expanded(
+                      child: Text('Pubs', style: TextStyle(fontSize: 14)),
+                    ),
+                    Switch(
+                      value: settings.notifyPubsMapRotation,
+                      onChanged: (v) async {
+                        if (v && settings.mapNotifyMinutesBefore == 0) {
+                          await NotificationService.requestPermissions();
+                        }
+                        ref
+                            .read(playerSettingsProvider.notifier)
+                            .setNotifyPubsMapRotation(v);
+                      },
+                      activeThumbColor: AppTheme.accent,
+                      activeTrackColor: AppTheme.accent.withAlpha(120),
+                    ),
+                  ],
+                ),
+                const Divider(color: AppTheme.surface2, height: 24),
+                // Ranked notifications
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.leaderboard_outlined,
+                      color: AppTheme.textPrimary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppTheme.sm),
+                    const Expanded(
+                      child: Text('Ranked', style: TextStyle(fontSize: 14)),
+                    ),
+                    Switch(
+                      value: settings.notifyRankedMapRotation,
+                      onChanged: (v) async {
+                        if (v && settings.mapNotifyMinutesBefore == 0) {
+                          await NotificationService.requestPermissions();
+                        }
+                        ref
+                            .read(playerSettingsProvider.notifier)
+                            .setNotifyRankedMapRotation(v);
+                      },
+                      activeThumbColor: AppTheme.accent,
+                      activeTrackColor: AppTheme.accent.withAlpha(120),
+                    ),
+                  ],
+                ),
+                const Divider(color: AppTheme.surface2, height: 24),
+                // Mixtape notifications
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.music_note_outlined,
+                      color: AppTheme.textPrimary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppTheme.sm),
+                    const Expanded(
+                      child: Text('Mixtape', style: TextStyle(fontSize: 14)),
+                    ),
+                    Switch(
+                      value: settings.notifyMixtapeMapRotation,
+                      onChanged: (v) async {
+                        if (v && settings.mapNotifyMinutesBefore == 0) {
+                          await NotificationService.requestPermissions();
+                        }
+                        ref
+                            .read(playerSettingsProvider.notifier)
+                            .setNotifyMixtapeMapRotation(v);
+                      },
+                      activeThumbColor: AppTheme.accent,
+                      activeTrackColor: AppTheme.accent.withAlpha(120),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
 
           const SizedBox(height: AppTheme.md),
 
           // ── Data ─────────────────────────────────────────────────
-          _SectionLabel(label: 'DATA'),
+          _SectionLabel(label: 'DATA', icon: Icons.storage),
           _SettingsCard(
             child: Column(
               children: [
@@ -326,53 +446,31 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: AppTheme.md),
 
-          // ── About ────────────────────────────────────────────────
-          _SectionLabel(label: 'ABOUT'),
+          // ── About & Resources ───────────────────────────────────
+          _SectionLabel(label: 'ABOUT & RESOURCES', icon: Icons.info_outline),
           _SettingsCard(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 FutureBuilder<PackageInfo>(
                   future: PackageInfo.fromPlatform(),
                   builder: (ctx, snap) {
                     final version = snap.data?.version ?? '—';
-                    return _InfoRow(label: 'Version', value: version);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _InfoRow(label: 'Version', value: version),
+                        const SizedBox(height: AppTheme.sm),
+                        const Text(
+                          'Apex Legends Nexus is an unofficial companion app. Not made by, affiliated with, or endorsed by Electronic Arts or Respawn Entertainment.',
+                          style: TextStyle(
+                            color: AppTheme.muted,
+                            fontSize: 11,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    );
                   },
-                ),
-                const Divider(color: AppTheme.surface2, height: 24),
-                const Text(
-                  'This is an unofficial companion app for Apex Legends. It is not made by, affiliated with, or endorsed by Electronic Arts or Respawn Entertainment.',
-                  style: TextStyle(
-                    color: AppTheme.muted,
-                    fontSize: 12,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: AppTheme.md),
-
-          // ── Data Sources ─────────────────────────────────────────
-          _SectionLabel(label: 'DATA SOURCES'),
-          _SettingsCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(bottom: AppTheme.sm),
-                  child: Text(
-                    'This app gets player stats, map rotations, and server status from:',
-                    style: TextStyle(color: AppTheme.muted, fontSize: 12),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.sm),
-                _LinkRow(
-                  label: 'apexlegendsapi.com',
-                  subtitle:
-                      'Player stats & legend data are provided by this API.',
-                  url: 'https://apexlegendsapi.com',
                 ),
                 const Divider(color: AppTheme.surface2, height: 24),
                 _LinkRow(
@@ -380,6 +478,13 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle:
                       'Server status. You can check this website for more information.',
                   url: 'https://apexlegendsstatus.com',
+                ),
+                const Divider(color: AppTheme.surface2, height: 24),
+                _LinkRow(
+                  label: 'apexlegendsapi.com',
+                  subtitle:
+                      'Player stats & legend data are provided by this API.',
+                  url: 'https://apexlegendsapi.com',
                 ),
               ],
             ),
@@ -583,20 +688,29 @@ class SettingsScreen extends ConsumerWidget {
 
 class _SectionLabel extends StatelessWidget {
   final String label;
-  const _SectionLabel({required this.label});
+  final IconData? icon;
+  const _SectionLabel({required this.label, this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: AppTheme.muted,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 1.5,
-        ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, color: AppTheme.accent, size: 14),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.muted,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ],
       ),
     );
   }

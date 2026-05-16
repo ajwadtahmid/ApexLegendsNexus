@@ -75,27 +75,34 @@ class NotificationService {
   // Schedule up to 3 notifications (one per mode) and cancel any old ones.
   static Future<void> scheduleAll(
     MapRotation rotation,
-    int minutesBefore,
-  ) async {
+    int minutesBefore, {
+    bool notifyRanked = false,
+    bool notifyPubs = false,
+    bool notifyMixtape = false,
+  }) async {
     if (!_supportsScheduled) return;
     await _plugin.cancelAll();
     if (minutesBefore <= 0) return;
 
-    await _scheduleMode(
-      _notifIdRanked,
-      'Ranked',
-      rotation.rankedNext,
-      rotation.rankedCurrent.remainingSecs,
-      minutesBefore,
-    );
-    await _scheduleMode(
-      _notifIdPubs,
-      'Pubs',
-      rotation.battleRoyaleNext,
-      rotation.battleRoyaleCurrent.remainingSecs,
-      minutesBefore,
-    );
-    if (rotation.ltmNext != null) {
+    if (notifyRanked) {
+      await _scheduleMode(
+        _notifIdRanked,
+        'Ranked',
+        rotation.rankedNext,
+        rotation.rankedCurrent.remainingSecs,
+        minutesBefore,
+      );
+    }
+    if (notifyPubs) {
+      await _scheduleMode(
+        _notifIdPubs,
+        'Pubs',
+        rotation.battleRoyaleNext,
+        rotation.battleRoyaleCurrent.remainingSecs,
+        minutesBefore,
+      );
+    }
+    if (notifyMixtape && rotation.ltmNext != null) {
       await _scheduleMode(
         _notifIdLtm,
         'Mixtape',

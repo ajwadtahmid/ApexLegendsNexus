@@ -37,9 +37,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     ref.listen(mapRotationProvider, (_, next) {
       next.whenData((result) {
-        final minutes = ref.read(playerSettingsProvider).mapNotifyMinutesBefore;
+        final settings = ref.read(playerSettingsProvider);
+        final minutes = settings.mapNotifyMinutesBefore;
         if (minutes > 0) {
-          NotificationService.scheduleAll(result.data, minutes);
+          NotificationService.scheduleAll(
+            result.data,
+            minutes,
+            notifyRanked: settings.notifyRankedMapRotation,
+            notifyPubs: settings.notifyPubsMapRotation,
+            notifyMixtape: settings.notifyMixtapeMapRotation,
+          );
         }
       });
     });
@@ -315,6 +322,13 @@ class _MapCardState extends State<_MapCard> {
     return DateFormat('h:mm a').format(end);
   }
 
+  String _formatMapDisplay(String mapName, String? eventName, bool isMixtape) {
+    if (isMixtape && eventName != null && eventName.isNotEmpty) {
+      return '$mapName - $eventName';
+    }
+    return mapName;
+  }
+
   @override
   Widget build(BuildContext context) {
     final current = widget.mode.current;
@@ -386,7 +400,11 @@ class _MapCardState extends State<_MapCard> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  current.map,
+                  _formatMapDisplay(
+                    current.map,
+                    current.eventName,
+                    widget.mode.label == 'Mixtape',
+                  ),
                   style: const TextStyle(
                     color: AppTheme.textPrimary,
                     fontSize: 24,
@@ -439,7 +457,11 @@ class _MapCardState extends State<_MapCard> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '→  ${next.map}',
+                    '→  ${_formatMapDisplay(
+                      next.map,
+                      next.eventName,
+                      widget.mode.label == 'Mixtape',
+                    )}',
                     style: const TextStyle(color: AppTheme.muted, fontSize: 13),
                   ),
                 ] else

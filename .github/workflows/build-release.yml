@@ -81,11 +81,14 @@ jobs:
       - name: Build Android AAB
         run: flutter build appbundle --release
 
+      - name: Rename AAB artifact
+        run: mv build/app/outputs/bundle/release/app-release.aab build/app/outputs/bundle/release/apexlegendsnexus-release.aab
+
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
         with:
           name: apex-legends-nexus-android
-          path: build/app/outputs/bundle/release/app-release.aab
+          path: build/app/outputs/bundle/release/apexlegendsnexus-release.aab
 
   build-windows:
     needs: test
@@ -253,6 +256,6 @@ jobs:
           files: |
             windows-build/apex-legends-nexus-installer.exe
             linux-build/*.AppImage
-            android-build/app-release.aab
+            android-build/apexlegendsnexus-release.aab
           draft: true
           generate_release_notes: true
