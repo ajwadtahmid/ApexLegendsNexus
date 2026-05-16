@@ -2,12 +2,15 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/map_rotation.dart';
+import '../../models/predator.dart';
 import '../../models/server_status.dart';
 import '../../models/news_article.dart';
 import '../../providers/map_provider.dart';
+import '../../providers/predator_provider.dart';
 import '../../providers/server_provider.dart';
 import '../../providers/news_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -33,6 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final mapAsync = ref.watch(mapRotationProvider);
     final serverAsync = ref.watch(serverStatusProvider);
     final newsAsync = ref.watch(newsProvider);
+    final predatorAsync = ref.watch(predatorProvider);
     final playerName = settings.name.isNotEmpty ? settings.name : 'Guest';
 
     ref.listen(mapRotationProvider, (_, next) {
@@ -46,9 +50,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           prev?.notifyRankedMapRotation != next.notifyRankedMapRotation ||
           prev?.notifyMixtapeMapRotation != next.notifyMixtapeMapRotation;
       if (!changed) return;
-      ref.read(mapRotationProvider).whenData(
-        (result) => _scheduleNotifications(ref, result.data),
-      );
+      ref
+          .read(mapRotationProvider)
+          .whenData((result) => _scheduleNotifications(ref, result.data));
     });
 
     return Scaffold(
@@ -59,6 +63,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ref.invalidate(mapRotationProvider);
             ref.invalidate(serverStatusProvider);
             ref.invalidate(newsProvider);
+            ref.invalidate(predatorProvider);
             await Future.wait([
               ref
                   .read(mapRotationProvider.future)
@@ -67,6 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   .read(serverStatusProvider.future)
                   .then((_) {}, onError: (_) {}),
               ref.read(newsProvider.future).then((_) {}, onError: (_) {}),
+              ref.read(predatorProvider.future).then((_) {}, onError: (_) {}),
             ]);
           },
           child: ListView(
@@ -112,20 +118,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: AppTheme.md),
 
-              // ── Server status summary ────────────────────────────
-              serverAsync.when(
-                data: (result) => _ServerSummaryCard(
-                  status: result.data,
+              // ── Predator cutoff ──────────────────────────────────
+              predatorAsync.when(
+                data: (result) => _PredatorSummaryCard(
+                  data: result.data,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => _ServerStatusPage(status: result.data),
+                      builder: (_) => _PredatorPage(data: result.data),
                     ),
                   ),
                 ),
                 loading: () => const _SummaryTileSkeleton(),
                 error: (e, _) => _SummaryErrorCard(
-                  title: 'Server Status',
-                  onRetry: () => ref.invalidate(serverStatusProvider),
+                  title: 'Pred Cutoff',
+                  onRetry: () => ref.invalidate(predatorProvider),
                 ),
               ),
               const SizedBox(height: AppTheme.sm),
@@ -144,6 +150,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 error: (e, _) => _SummaryErrorCard(
                   title: 'Latest News',
                   onRetry: () => ref.invalidate(newsProvider),
+                ),
+              ),
+              const SizedBox(height: AppTheme.sm),
+
+              // ── Server status summary ────────────────────────────
+              serverAsync.when(
+                data: (result) => _ServerSummaryCard(
+                  status: result.data,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => _ServerStatusPage(status: result.data),
+                    ),
+                  ),
+                ),
+                loading: () => const _SummaryTileSkeleton(),
+                error: (e, _) => _SummaryErrorCard(
+                  title: 'Server Status',
+                  onRetry: () => ref.invalidate(serverStatusProvider),
                 ),
               ),
             ],
@@ -472,11 +496,7 @@ class _MapCardState extends State<_MapCard> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '→  ${_formatMapDisplay(
-                      next.map,
-                      next.eventName,
-                      widget.mode.label == 'Mixtape',
-                    )}',
+                    '→  ${_formatMapDisplay(next.map, next.eventName, widget.mode.label == 'Mixtape')}',
                     style: const TextStyle(color: AppTheme.muted, fontSize: 13),
                   ),
                 ] else
@@ -824,6 +844,198 @@ class _SummaryErrorCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Predator cutoff summary card ──────────────────────────────────────────────
+
+class _PredatorSummaryCard extends StatelessWidget {
+  final PredatorResponse data;
+  final VoidCallback onTap;
+
+  const _PredatorSummaryCard({required this.data, required this.onTap});
+
+  String get _subtitle {
+    final count = data.rp.values.fold(0, (s, p) => s + p.totalMastersAndPreds);
+    return '$count Masters & Preds across all platforms';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SummaryTile(
+      leading: const FaIcon(
+        FontAwesomeIcons.skull,
+        color: AppTheme.accent,
+        size: 20,
+      ),
+      title: 'Pred Cutoff',
+      subtitle: _subtitle,
+      onTap: onTap,
+    );
+  }
+}
+
+String _formatRp(int rp) {
+  return NumberFormat('#,###').format(rp);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Predator cutoff detail page (pushed from home)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _PredatorPage extends StatelessWidget {
+  final PredatorResponse data;
+  const _PredatorPage({required this.data});
+
+  static const _platforms = [
+    ('PC', 'PC'),
+    ('PS4', 'PlayStation'),
+    ('X1', 'Xbox'),
+    ('SWITCH', 'Nintendo Switch'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = _platforms
+        .map((p) => (p.$2, data.forPlatform(p.$1)))
+        .where((e) => e.$2 != null)
+        .toList();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Pred Cutoff')),
+      body: ListView(
+        padding: const EdgeInsets.all(AppTheme.md),
+        children: [
+          ...entries.map((e) {
+            final key = _platforms.firstWhere((p) => p.$2 == e.$1).$1;
+            return _PlatformCard(platformKey: key, name: e.$1, info: e.$2!);
+          }),
+          const SizedBox(height: AppTheme.md),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppTheme.sm),
+            child: Text(
+              'All Masters have a hidden ladder ranking that is only displayed when being a Predator (you can still see it on the website on your profile page). The total amount of masters is guessed using the highest ranking found in the ALS database. The number found is very likely to be under-estimated, as all masters players are not in the ALS database. However, if the last master is in our database, the ranking will be 100% accurate.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppTheme.muted, fontSize: 12, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Widget _platformIcon(String platformKey) {
+  switch (platformKey) {
+    case 'PS4':
+      return const FaIcon(
+        FontAwesomeIcons.playstation,
+        color: AppTheme.blue,
+        size: 16,
+      );
+    case 'X1':
+      return const FaIcon(
+        FontAwesomeIcons.xbox,
+        color: AppTheme.green,
+        size: 16,
+      );
+    case 'SWITCH':
+      return const FaIcon(
+        FontAwesomeIcons.gamepad,
+        color: AppTheme.red,
+        size: 16,
+      );
+    default:
+      return const FaIcon(
+        FontAwesomeIcons.desktop,
+        color: AppTheme.muted,
+        size: 16,
+      );
+  }
+}
+
+class _PlatformCard extends StatelessWidget {
+  final String platformKey;
+  final String name;
+  final PlatformPredator info;
+
+  const _PlatformCard({
+    required this.platformKey,
+    required this.name,
+    required this.info,
+  });
+
+  String _timeAgo(DateTime t) {
+    final diff = DateTime.now().difference(t);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppTheme.sm),
+      padding: const EdgeInsets.all(AppTheme.md),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _platformIcon(platformKey),
+              const SizedBox(width: AppTheme.xs),
+              Text(
+                name.toUpperCase(),
+                style: const TextStyle(
+                  color: AppTheme.muted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _timeAgo(info.updatedAt),
+                style: const TextStyle(color: AppTheme.muted, fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.sm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                _formatRp(info.minRp),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'RP',
+                style: TextStyle(
+                  color: AppTheme.muted,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${_formatRp(info.totalMastersAndPreds)} Masters + Preds',
+            style: const TextStyle(color: AppTheme.muted, fontSize: 13),
+          ),
+        ],
       ),
     );
   }

@@ -9,6 +9,15 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  extract-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +46,7 @@ jobs:
         run: flutter test
 
   build-android:
-    needs: test
+    needs: [test, extract-version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -82,16 +91,16 @@ jobs:
         run: flutter build appbundle --release
 
       - name: Rename AAB artifact
-        run: mv build/app/outputs/bundle/release/app-release.aab build/app/outputs/bundle/release/apexlegendsnexus-release.aab
+        run: mv build/app/outputs/bundle/release/app-release.aab build/app/outputs/bundle/release/apex-legends-nexus-${{ needs.extract-version.outputs.version }}-release.aab
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
         with:
           name: apex-legends-nexus-android
-          path: build/app/outputs/bundle/release/apexlegendsnexus-release.aab
+          path: build/app/outputs/bundle/release/apex-legends-nexus-${{ needs.extract-version.outputs.version }}-release.aab
 
   build-windows:
-    needs: test
+    needs: [test, extract-version]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -123,14 +132,17 @@ jobs:
           $env:GITHUB_WORKSPACE = "${{ github.workspace }}"
           & 'C:\Program Files (x86)\NSIS\makensis.exe' "${{ github.workspace }}\windows\installer\apex_legends_nexus.nsi"
 
+      - name: Rename Windows installer
+        run: mv apex-legends-nexus-installer.exe "apex-legends-nexus-${{ needs.extract-version.outputs.version }}-installer.exe"
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: apex-legends-nexus-windows
-          path: apex-legends-nexus-installer.exe
+          path: apex-legends-nexus-${{ needs.extract-version.outputs.version }}-installer.exe
 
   build-linux:
-    needs: test
+    needs: [test, extract-version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -218,14 +230,17 @@ jobs:
             --appdir AppDir \
             --output appimage
 
+      - name: Rename Linux AppImage
+        run: mv Apex_Legends_Nexus-${{ needs.extract-version.outputs.version }}-x86_64.AppImage apex-legends-nexus-${{ needs.extract-version.outputs.version }}.AppImage
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: apex-legends-nexus-linux
-          path: "*.AppImage"
+          path: apex-legends-nexus-${{ needs.extract-version.outputs.version }}.AppImage
 
   create-release:
-    needs: [build-windows, build-linux, build-android]
+    needs: [extract-version, build-windows, build-linux, build-android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -254,8 +269,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            windows-build/apex-legends-nexus-installer.exe
-            linux-build/*.AppImage
-            android-build/apexlegendsnexus-release.aab
+            windows-build/apex-legends-nexus-${{ needs.extract-version.outputs.version }}-installer.exe
+            linux-build/apex-legends-nexus-${{ needs.extract-version.outputs.version }}.AppImage
+            android-build/apex-legends-nexus-${{ needs.extract-version.outputs.version }}-release.aab
           draft: true
           generate_release_notes: true
