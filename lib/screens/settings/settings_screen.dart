@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../constants/api_constants.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/background_service.dart';
 import '../../services/notification_service.dart';
 import '../../utils/theme.dart';
 
@@ -334,9 +335,7 @@ class SettingsScreen extends ConsumerWidget {
                     Switch(
                       value: settings.notifyPubsMapRotation,
                       onChanged: (v) async {
-                        if (v && settings.mapNotifyMinutesBefore == 0) {
-                          await NotificationService.requestPermissions();
-                        }
+                        if (v) await _enableNotificationMode(context);
                         ref
                             .read(playerSettingsProvider.notifier)
                             .setNotifyPubsMapRotation(v);
@@ -362,9 +361,7 @@ class SettingsScreen extends ConsumerWidget {
                     Switch(
                       value: settings.notifyRankedMapRotation,
                       onChanged: (v) async {
-                        if (v && settings.mapNotifyMinutesBefore == 0) {
-                          await NotificationService.requestPermissions();
-                        }
+                        if (v) await _enableNotificationMode(context);
                         ref
                             .read(playerSettingsProvider.notifier)
                             .setNotifyRankedMapRotation(v);
@@ -390,9 +387,7 @@ class SettingsScreen extends ConsumerWidget {
                     Switch(
                       value: settings.notifyMixtapeMapRotation,
                       onChanged: (v) async {
-                        if (v && settings.mapNotifyMinutesBefore == 0) {
-                          await NotificationService.requestPermissions();
-                        }
+                        if (v) await _enableNotificationMode(context);
                         ref
                             .read(playerSettingsProvider.notifier)
                             .setNotifyMixtapeMapRotation(v);
@@ -649,6 +644,31 @@ class SettingsScreen extends ConsumerWidget {
         }).toList(),
       ),
     );
+  }
+
+  Future<void> _enableNotificationMode(BuildContext context) async {
+    await NotificationService.requestPermissions();
+    if (!context.mounted) return;
+    final available = await BackgroundService.isAvailable();
+    if (!available && context.mounted) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppTheme.surface,
+          title: const Text('Background Refresh Disabled'),
+          content: const Text(
+            'Notifications will only fire while the app is open.\n\nTo get alerts when the app is closed, enable Background App Refresh in:\niOS Settings → General → Background App Refresh → Apex Legends Nexus',
+            style: TextStyle(color: AppTheme.muted, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK', style: TextStyle(color: AppTheme.accent)),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _confirm(

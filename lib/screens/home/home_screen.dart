@@ -36,19 +36,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final playerName = settings.name.isNotEmpty ? settings.name : 'Guest';
 
     ref.listen(mapRotationProvider, (_, next) {
-      next.whenData((result) {
-        final settings = ref.read(playerSettingsProvider);
-        final minutes = settings.mapNotifyMinutesBefore;
-        if (minutes > 0) {
-          NotificationService.scheduleAll(
-            result.data,
-            minutes,
-            notifyRanked: settings.notifyRankedMapRotation,
-            notifyPubs: settings.notifyPubsMapRotation,
-            notifyMixtape: settings.notifyMixtapeMapRotation,
-          );
-        }
-      });
+      next.whenData((result) => _scheduleNotifications(ref, result.data));
+    });
+
+    ref.listen(playerSettingsProvider, (prev, next) {
+      final changed =
+          prev?.mapNotifyMinutesBefore != next.mapNotifyMinutesBefore ||
+          prev?.notifyPubsMapRotation != next.notifyPubsMapRotation ||
+          prev?.notifyRankedMapRotation != next.notifyRankedMapRotation ||
+          prev?.notifyMixtapeMapRotation != next.notifyMixtapeMapRotation;
+      if (!changed) return;
+      ref.read(mapRotationProvider).whenData(
+        (result) => _scheduleNotifications(ref, result.data),
+      );
     });
 
     return Scaffold(
@@ -151,6 +151,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _scheduleNotifications(WidgetRef ref, MapRotation data) {
+    final s = ref.read(playerSettingsProvider);
+    if (s.mapNotifyMinutesBefore > 0) {
+      NotificationService.scheduleAll(
+        data,
+        s.mapNotifyMinutesBefore,
+        notifyRanked: s.notifyRankedMapRotation,
+        notifyPubs: s.notifyPubsMapRotation,
+        notifyMixtape: s.notifyMixtapeMapRotation,
+      );
+    } else {
+      NotificationService.cancelAll();
+    }
   }
 
   List<_ModeData> _buildModes(MapRotation r) => [

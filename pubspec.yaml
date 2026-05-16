@@ -47,6 +47,7 @@ dependencies:
   timezone: ^0.9.4
   package_info_plus: ^10.1.0
   toastification: ^3.2.0
+  background_fetch: ^1.6.2
 
 dev_dependencies:
   flutter_test:

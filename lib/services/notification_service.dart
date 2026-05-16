@@ -8,11 +8,11 @@ class NotificationService {
   static bool _initialized = false;
 
   static const _androidChannel = AndroidNotificationDetails(
-    'map_rotation',
+    'map_rotation_v2',
     'Map Rotation',
     channelDescription: 'Alerts before the map rotates',
-    importance: Importance.defaultImportance,
-    priority: Priority.defaultPriority,
+    importance: Importance.high,
+    priority: Priority.high,
   );
   static const _details = NotificationDetails(
     android: _androidChannel,
@@ -120,19 +120,19 @@ class NotificationService {
     int currentRemainingSecs,
     int minutesBefore,
   ) async {
-    final notifyAt = DateTime.now()
+    final notifyAt = tz.TZDateTime.now(tz.UTC)
         .add(Duration(seconds: currentRemainingSecs))
         .subtract(Duration(minutes: minutesBefore));
 
-    if (!notifyAt.isAfter(DateTime.now())) return;
+    if (!notifyAt.isAfter(tz.TZDateTime.now(tz.UTC))) return;
 
     await _plugin.zonedSchedule(
       id,
       '$modeLabel · Map Rotation',
       '${nextMap.map} starts in $minutesBefore min',
-      tz.TZDateTime.from(notifyAt, tz.local),
+      notifyAt,
       _details,
-      androidScheduleMode: AndroidScheduleMode.inexact,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );

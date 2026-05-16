@@ -6,6 +6,7 @@ import 'app.dart';
 import 'providers/api_provider.dart';
 import 'providers/settings_provider.dart';
 import 'services/api_service.dart';
+import 'services/background_service.dart';
 import 'services/notification_service.dart';
 
 void main() async {
@@ -15,6 +16,7 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   await NotificationService.init();
+  await BackgroundService.init();
 
   // Shared ApiService instance — reuses the same Dio connection pool for
   // the warmup ping and all subsequent provider requests.
