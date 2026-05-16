@@ -9,8 +9,6 @@ class PlayerStats {
   final bool isOnline;
   final bool isInGame;
   final List<Tracker> trackers;
-  final int kills;
-  final int gamesPlayed;
   final List<LegendStat> legendStats;
 
   PlayerStats({
@@ -24,13 +22,25 @@ class PlayerStats {
     required this.isOnline,
     required this.isInGame,
     required this.trackers,
-    required this.kills,
-    required this.gamesPlayed,
     this.legendStats = const [],
   });
 
   String get presence =>
       isInGame ? 'In Game' : (isOnline ? 'Online' : 'Offline');
+
+  // Parses int from both numeric and string API responses.
+  static int _parseInt(dynamic v) {
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? 0;
+    return 0;
+  }
+
+  // Accepts both numeric (0/1) and boolean API responses.
+  static bool _parseBool(dynamic v) {
+    if (v is bool) return v;
+    if (v is num) return v.toInt() == 1;
+    return false;
+  }
 
   factory PlayerStats.fromJson(Map<String, dynamic> json) {
     final global = json['global'] as Map<String, dynamic>? ?? {};
@@ -39,17 +49,13 @@ class PlayerStats {
     final selectedData = selected['data'] as List? ?? [];
     final realtime = json['realtime'] as Map<String, dynamic>? ?? {};
 
-    int kills = 0;
-    int gamesPlayed = 0;
     final trackers = <Tracker>[];
 
     for (final stat in selectedData) {
-      final key = stat['key'] as String?;
-      final value = (stat['value'] as num?)?.toInt() ?? 0;
+      if (stat is! Map) continue;
       final name = stat['name'] as String? ?? '';
+      final value = _parseInt(stat['value']);
       trackers.add(Tracker(name: name, value: value));
-      if (key == 'kills') kills = value;
-      if (key == 'games_played') gamesPlayed = value;
     }
 
     // Parse per-legend stats from legends.all
@@ -63,7 +69,7 @@ class PlayerStats {
         if (stat is! Map) continue;
         final key = stat['key'] as String? ?? '';
         final displayName = stat['name'] as String? ?? key;
-        final val = (stat['value'] as num?)?.toInt() ?? 0;
+        final val = _parseInt(stat['value']);
         if (key.isNotEmpty) {
           legendTrackers.add(
             LegendTracker(key: key, displayName: displayName, value: val),
@@ -79,21 +85,17 @@ class PlayerStats {
     return PlayerStats(
       name: global['name'] as String? ?? 'Unknown',
       uid: global['uid']?.toString() ?? '',
-      level: (global['level'] as num?)?.toInt() ?? 0,
+      level: _parseInt(global['level']),
       rank:
           (global['rank'] as Map<String, dynamic>?)?['rankName'] as String? ??
           'Unranked',
       rankScore:
-          ((global['rank'] as Map<String, dynamic>?)?['rankScore'] as num?)
-              ?.toInt() ??
-          0,
+          _parseInt((global['rank'] as Map<String, dynamic>?)?['rankScore']),
       platform: global['platform'] as String? ?? 'Unknown',
       currentLegend: selected['LegendName'] as String? ?? 'Unknown',
-      isOnline: ((realtime['isOnline'] as num?)?.toInt() ?? 0) == 1,
-      isInGame: ((realtime['isInGame'] as num?)?.toInt() ?? 0) == 1,
+      isOnline: _parseBool(realtime['isOnline']),
+      isInGame: _parseBool(realtime['isInGame']),
       trackers: trackers,
-      kills: kills,
-      gamesPlayed: gamesPlayed,
       legendStats: legendStats,
     );
   }
@@ -139,12 +141,12 @@ class LegendStat {
 
   const LegendStat({required this.name, required this.trackers});
 
-  int get killCount => trackers
-      .firstWhere(
-        (t) => t.key == 'kills',
-        orElse: () => const LegendTracker(key: '', displayName: '', value: 0),
-      )
-      .value;
+  int get killCount {
+    for (final t in trackers) {
+      if (t.key == 'kills') return t.value;
+    }
+    return 0;
+  }
 
   // Update existing tracker values and append any new keys.
   LegendStat merge(LegendStat incoming) {
@@ -172,13 +174,13 @@ class LegendStat {
 class PlayerUidResult {
   final String name;
   final String uid;
-  final String pid;
+  final String platformId;
   final String avatar;
 
   PlayerUidResult({
     required this.name,
     required this.uid,
-    required this.pid,
+    required this.platformId,
     required this.avatar,
   });
 
@@ -186,7 +188,7 @@ class PlayerUidResult {
     return PlayerUidResult(
       name: json['name'] as String? ?? 'Unknown',
       uid: json['uid']?.toString() ?? '',
-      pid: json['pid']?.toString() ?? '',
+      platformId: json['pid']?.toString() ?? '',
       avatar: json['avatar'] as String? ?? '',
     );
   }

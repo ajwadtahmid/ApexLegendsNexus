@@ -20,12 +20,12 @@ class PredatorResponse {
 class PlatformPredator {
   final int minRp;
   final int totalMastersAndPreds;
-  final DateTime updatedAt;
+  final DateTime? updatedAt;
 
   PlatformPredator({
     required this.minRp,
     required this.totalMastersAndPreds,
-    required this.updatedAt,
+    this.updatedAt,
   });
 
   factory PlatformPredator.fromJson(Map<String, dynamic> json) {
@@ -34,7 +34,9 @@ class PlatformPredator {
       minRp: (json['val'] as num?)?.toInt() ?? 0,
       totalMastersAndPreds:
           (json['totalMastersAndPreds'] as num?)?.toInt() ?? 0,
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(ts * 1000),
+      updatedAt: ts > 0
+          ? DateTime.fromMillisecondsSinceEpoch(ts * 1000)
+          : null,
     );
   }
 }

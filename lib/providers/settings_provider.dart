@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
+import '../constants/prefs_keys.dart';
 
 // Track when the app was launched (for showing tips once per session)
 final appLaunchTimeProvider = Provider<DateTime>((ref) {
@@ -45,6 +46,29 @@ class PlayerSettings {
 
   bool get isPlayerSet => uid.isNotEmpty;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlayerSettings &&
+          other.name == name &&
+          other.uid == uid &&
+          other.platform == platform &&
+          other.statsRefreshMinutes == statsRefreshMinutes &&
+          other.compactLegendCards == compactLegendCards &&
+          other.mapNotifyMinutesBefore == mapNotifyMinutesBefore &&
+          other.notifyPubsMapRotation == notifyPubsMapRotation &&
+          other.notifyRankedMapRotation == notifyRankedMapRotation &&
+          other.notifyMixtapeMapRotation == notifyMixtapeMapRotation &&
+          other.defaultTab == defaultTab &&
+          other.helpfulTipsEnabled == helpfulTipsEnabled;
+
+  @override
+  int get hashCode => Object.hash(
+    name, uid, platform, statsRefreshMinutes, compactLegendCards,
+    mapNotifyMinutesBefore, notifyPubsMapRotation, notifyRankedMapRotation,
+    notifyMixtapeMapRotation, defaultTab, helpfulTipsEnabled,
+  );
+
   PlayerSettings copyWith({
     String? name,
     String? uid,
@@ -84,74 +108,74 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
   @override
   PlayerSettings build() {
     return PlayerSettings(
-      name: _prefs.getString('player_name') ?? '',
-      uid: _prefs.getString('player_uid') ?? '',
-      platform: _prefs.getString('player_platform') ?? ApiConstants.defaultPlatform,
-      statsRefreshMinutes: _prefs.getInt('stats_refresh_minutes') ?? 0,
-      compactLegendCards: _prefs.getBool('compact_legend_cards') ?? false,
-      mapNotifyMinutesBefore: _prefs.getInt('map_notify_minutes') ?? 0,
-      notifyPubsMapRotation: _prefs.getBool('notify_pubs_map_rotation') ?? false,
-      notifyRankedMapRotation: _prefs.getBool('notify_ranked_map_rotation') ?? false,
-      notifyMixtapeMapRotation: _prefs.getBool('notify_mixtape_map_rotation') ?? false,
-      defaultTab: _prefs.getInt('default_tab') ?? 0,
-      helpfulTipsEnabled: _prefs.getBool('helpful_tips_enabled') ?? true,
+      name: _prefs.getString(PrefsKeys.playerName) ?? '',
+      uid: _prefs.getString(PrefsKeys.playerUid) ?? '',
+      platform: _prefs.getString(PrefsKeys.playerPlatform) ?? ApiConstants.defaultPlatform,
+      statsRefreshMinutes: _prefs.getInt(PrefsKeys.statsRefreshMinutes) ?? 0,
+      compactLegendCards: _prefs.getBool(PrefsKeys.compactLegendCards) ?? false,
+      mapNotifyMinutesBefore: _prefs.getInt(PrefsKeys.mapNotifyMinutes) ?? 0,
+      notifyPubsMapRotation: _prefs.getBool(PrefsKeys.notifyPubsMapRotation) ?? false,
+      notifyRankedMapRotation: _prefs.getBool(PrefsKeys.notifyRankedMapRotation) ?? false,
+      notifyMixtapeMapRotation: _prefs.getBool(PrefsKeys.notifyMixtapeMapRotation) ?? false,
+      defaultTab: _prefs.getInt(PrefsKeys.defaultTab) ?? 0,
+      helpfulTipsEnabled: _prefs.getBool(PrefsKeys.helpfulTipsEnabled) ?? true,
     );
   }
 
   Future<void> setPlayer(String name, String uid, String platform) async {
     await Future.wait([
-      _prefs.setString('player_name', name),
-      _prefs.setString('player_uid', uid),
-      _prefs.setString('player_platform', platform),
+      _prefs.setString(PrefsKeys.playerName, name),
+      _prefs.setString(PrefsKeys.playerUid, uid),
+      _prefs.setString(PrefsKeys.playerPlatform, platform),
     ]);
     state = state.copyWith(name: name, uid: uid, platform: platform);
   }
 
-  void setStatsRefreshMinutes(int minutes) {
-    _prefs.setInt('stats_refresh_minutes', minutes);
+  Future<void> setStatsRefreshMinutes(int minutes) async {
+    await _prefs.setInt(PrefsKeys.statsRefreshMinutes, minutes);
     state = state.copyWith(statsRefreshMinutes: minutes);
   }
 
-  void setCompactLegendCards(bool compact) {
-    _prefs.setBool('compact_legend_cards', compact);
+  Future<void> setCompactLegendCards(bool compact) async {
+    await _prefs.setBool(PrefsKeys.compactLegendCards, compact);
     state = state.copyWith(compactLegendCards: compact);
   }
 
-  void setMapNotifyMinutesBefore(int minutes) {
-    _prefs.setInt('map_notify_minutes', minutes);
+  Future<void> setMapNotifyMinutesBefore(int minutes) async {
+    await _prefs.setInt(PrefsKeys.mapNotifyMinutes, minutes);
     state = state.copyWith(mapNotifyMinutesBefore: minutes);
   }
 
-  void setNotifyPubsMapRotation(bool notify) {
-    _prefs.setBool('notify_pubs_map_rotation', notify);
+  Future<void> setNotifyPubsMapRotation(bool notify) async {
+    await _prefs.setBool(PrefsKeys.notifyPubsMapRotation, notify);
     state = state.copyWith(notifyPubsMapRotation: notify);
   }
 
-  void setNotifyRankedMapRotation(bool notify) {
-    _prefs.setBool('notify_ranked_map_rotation', notify);
+  Future<void> setNotifyRankedMapRotation(bool notify) async {
+    await _prefs.setBool(PrefsKeys.notifyRankedMapRotation, notify);
     state = state.copyWith(notifyRankedMapRotation: notify);
   }
 
-  void setNotifyMixtapeMapRotation(bool notify) {
-    _prefs.setBool('notify_mixtape_map_rotation', notify);
+  Future<void> setNotifyMixtapeMapRotation(bool notify) async {
+    await _prefs.setBool(PrefsKeys.notifyMixtapeMapRotation, notify);
     state = state.copyWith(notifyMixtapeMapRotation: notify);
   }
 
-  void setDefaultTab(int tab) {
-    _prefs.setInt('default_tab', tab);
+  Future<void> setDefaultTab(int tab) async {
+    await _prefs.setInt(PrefsKeys.defaultTab, tab);
     state = state.copyWith(defaultTab: tab);
   }
 
-  void setHelpfulTipsEnabled(bool enabled) {
-    _prefs.setBool('helpful_tips_enabled', enabled);
+  Future<void> setHelpfulTipsEnabled(bool enabled) async {
+    await _prefs.setBool(PrefsKeys.helpfulTipsEnabled, enabled);
     state = state.copyWith(helpfulTipsEnabled: enabled);
   }
 
   Future<void> clear() async {
     await Future.wait([
-      _prefs.remove('player_name'),
-      _prefs.remove('player_uid'),
-      _prefs.remove('player_platform'),
+      _prefs.remove(PrefsKeys.playerName),
+      _prefs.remove(PrefsKeys.playerUid),
+      _prefs.remove(PrefsKeys.playerPlatform),
     ]);
     state = state.copyWith(name: '', uid: '', platform: ApiConstants.defaultPlatform);
   }
@@ -162,7 +186,7 @@ final playerSettingsProvider =
       PlayerSettingsNotifier.new,
     );
 
-// ── Search state (recents + favorites) ───────────────────────────────────────
+// ── Search state (favorites) ──────────────────────────────────────────────────
 
 class PlayerRef {
   final String query;
@@ -182,6 +206,17 @@ class PlayerRef {
     platform: json['platform'] as String? ?? 'PC',
     uid: json['uid'] as String?,
   );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlayerRef &&
+          other.query == query &&
+          other.platform == platform &&
+          other.uid == uid;
+
+  @override
+  int get hashCode => Object.hash(query, platform, uid);
 }
 
 class SearchState {
@@ -192,6 +227,20 @@ class SearchState {
   SearchState copyWith({List<PlayerRef>? favorites}) {
     return SearchState(favorites: favorites ?? this.favorites);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! SearchState) return false;
+    if (other.favorites.length != favorites.length) return false;
+    for (var i = 0; i < favorites.length; i++) {
+      if (other.favorites[i] != favorites[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAll(favorites);
 }
 
 class SearchNotifier extends Notifier<SearchState> {
@@ -199,7 +248,7 @@ class SearchNotifier extends Notifier<SearchState> {
 
   @override
   SearchState build() {
-    return SearchState(favorites: _load(_prefs, 'search_favorites'));
+    return SearchState(favorites: _load(_prefs, PrefsKeys.searchFavorites));
   }
 
   static List<PlayerRef> _load(SharedPreferences prefs, String key) {
@@ -215,16 +264,16 @@ class SearchNotifier extends Notifier<SearchState> {
     }
   }
 
-  void _save(String key, List<PlayerRef> list) {
-    _prefs.setString(key, jsonEncode(list.map((r) => r.toJson()).toList()));
+  Future<void> _save(String key, List<PlayerRef> list) async {
+    await _prefs.setString(key, jsonEncode(list.map((r) => r.toJson()).toList()));
   }
 
-  void clearFavorites() {
-    _prefs.remove('search_favorites');
+  Future<void> clearFavorites() async {
+    await _prefs.remove(PrefsKeys.searchFavorites);
     state = state.copyWith(favorites: []);
   }
 
-  void toggleFavorite(PlayerRef ref) {
+  Future<void> toggleFavorite(PlayerRef ref) async {
     final favorites = List<PlayerRef>.from(state.favorites);
     final idx = favorites.indexWhere(
       (f) => f.query == ref.query && f.platform == ref.platform,
@@ -234,7 +283,7 @@ class SearchNotifier extends Notifier<SearchState> {
     } else {
       favorites.insert(0, ref);
     }
-    _save('search_favorites', favorites);
+    await _save(PrefsKeys.searchFavorites, favorites);
     state = state.copyWith(favorites: favorites);
   }
 }

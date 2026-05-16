@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../utils/platform_support.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../models/map_rotation.dart';
@@ -21,6 +21,7 @@ class NotificationService {
 
   static Future<void> init() async {
     if (_initialized) return;
+    if (!_supportsScheduled) return;
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
@@ -29,14 +30,10 @@ class NotificationService {
       requestBadgePermission: false,
       requestSoundPermission: false,
     );
-    const linuxSettings = LinuxInitializationSettings(
-      defaultActionName: 'Open',
-    );
     await _plugin.initialize(
-      InitializationSettings(
+      const InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
-        linux: linuxSettings,
       ),
     );
     _initialized = true;
@@ -66,7 +63,7 @@ class NotificationService {
     return false;
   }
 
-  static bool get _supportsScheduled => Platform.isAndroid || Platform.isIOS;
+  static bool get _supportsScheduled => supportsNotifications;
 
   static const _notifIdRanked = 11;
   static const _notifIdPubs = 12;
@@ -102,7 +99,9 @@ class NotificationService {
         minutesBefore,
       );
     }
-    if (notifyMixtape && rotation.ltmNext != null) {
+    if (notifyMixtape &&
+        rotation.ltmCurrent != null &&
+        rotation.ltmNext != null) {
       await _scheduleMode(
         _notifIdLtm,
         'Mixtape',

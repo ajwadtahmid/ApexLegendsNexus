@@ -5,7 +5,6 @@ class ApiResult<T> {
   final T data;
   final DateTime? staleAt;
   const ApiResult(this.data, {this.staleAt});
-  bool get isStale => staleAt != null;
 }
 
 class CachedEntry {
@@ -22,9 +21,9 @@ class ApiCache {
 
   ApiCache(this._prefs);
 
-  void save(String key, dynamic data) {
-    _prefs.setString('$_prefix$key', jsonEncode(data));
-    _prefs.setInt('$_tsPrefix$key', DateTime.now().millisecondsSinceEpoch);
+  Future<void> save(String key, dynamic data) async {
+    await _prefs.setString('$_prefix$key', jsonEncode(data));
+    await _prefs.setInt('$_tsPrefix$key', DateTime.now().millisecondsSinceEpoch);
   }
 
   CachedEntry? load(String key) {

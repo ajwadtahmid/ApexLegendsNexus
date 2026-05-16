@@ -6,6 +6,6 @@ class ApiConstants {
     'PC': 'PC',
     'PS4': 'PlayStation',
     'X1': 'Xbox',
-    'SWITCH': 'Switch',
+    'SWITCH': 'Nintendo Switch',
   };
 }

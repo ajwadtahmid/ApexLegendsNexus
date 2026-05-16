@@ -8,6 +8,7 @@ import '../../providers/settings_provider.dart';
 import '../../utils/error_messages.dart';
 import '../../utils/format.dart';
 import '../../utils/storage.dart';
+import '../../utils/uid_search.dart';
 import '../../utils/theme.dart';
 import '../../widgets/graph_card.dart';
 import '../../widgets/platform_picker.dart';
@@ -35,32 +36,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Future<void> _toggleUidSearch(bool value) async {
     if (value && !_searchByUid) {
-      // First time selecting UID search - show warning
-      final prefs = ref.read(sharedPreferencesProvider);
-      final shownWarning = prefs.getBool('uid_search_warning_shown') ?? false;
-
-      if (!shownWarning) {
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Text('Finding Your UID'),
-              content: const Text(
-                'You can find the UID from deep search on apexlegendsstatus.com',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Got it'),
-                ),
-              ],
-            ),
-          );
-          await prefs.setBool('uid_search_warning_shown', true);
-        }
-      }
+      await showUidWarningIfNeeded(context, ref);
     }
-    setState(() => _searchByUid = value);
+    if (mounted) setState(() => _searchByUid = value);
   }
 
   void _search([String? query, String? platform]) {
@@ -360,7 +338,7 @@ class _PlayerResultPageState extends ConsumerState<_PlayerResultPage> {
                       title: Text(legend.name),
                       subtitle: legend.killCount > 0
                           ? Text(
-                              '${fmtRp(legend.killCount)} kills',
+                              '${formatNumber(legend.killCount)} kills',
                               style: const TextStyle(
                                 color: AppTheme.muted,
                                 fontSize: 12,
@@ -430,25 +408,9 @@ class _PlayerResultBodyState extends State<_PlayerResultBody> {
     if (mounted) {
       setState(() {
         _snapshots = snaps;
-        _rpDelta = _computeTodayDelta(snaps);
+        _rpDelta = computeDelta(snaps, widget.stats.rankScore);
       });
     }
-  }
-
-  int? _computeTodayDelta(List<StatSnapshot> snaps) {
-    if (snaps.length < 2) return null;
-    final midnight = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-    );
-    final beforeToday = snaps
-        .where((s) => s.timestamp.isBefore(midnight))
-        .toList();
-    if (beforeToday.isNotEmpty) {
-      return widget.stats.rankScore - beforeToday.last.rp;
-    }
-    return widget.stats.rankScore - snaps.first.rp;
   }
 
   @override
@@ -566,24 +528,24 @@ class _RankedCompare extends StatelessWidget {
 
   String _rankLabel(PlayerStats s) {
     if (s.rank == kApexPredatorRank) return kApexPredatorRank;
-    return kRankLadder[rankIdx(s.rankScore)].label;
+    return kRankLadder[rankIndex(s.rankScore)].label;
   }
 
   Color _rankColor(PlayerStats s) {
     if (s.rank == kApexPredatorRank) return kPredatorColor;
-    return kRankLadder[rankIdx(s.rankScore)].color;
+    return kRankLadder[rankIndex(s.rankScore)].color;
   }
 
   String? _nextLabel(PlayerStats s) {
     if (s.rank == kApexPredatorRank) return null;
-    final idx = rankIdx(s.rankScore);
+    final idx = rankIndex(s.rankScore);
     if (idx < kRankLadder.length - 1) return kRankLadder[idx + 1].label;
     return null;
   }
 
   int? _rpToNext(PlayerStats s) {
     if (s.rank == kApexPredatorRank) return null;
-    final idx = rankIdx(s.rankScore);
+    final idx = rankIndex(s.rankScore);
     if (idx < kRankLadder.length - 1) {
       return kRankLadder[idx + 1].rp - s.rankScore;
     }
@@ -603,8 +565,8 @@ class _RankedCompare extends StatelessWidget {
     final sameRankTier =
         !_meIsPred &&
         !_themIsPred &&
-        kRankLadder[rankIdx(me.rankScore)].tier ==
-            kRankLadder[rankIdx(them.rankScore)].tier;
+        kRankLadder[rankIndex(me.rankScore)].tier ==
+            kRankLadder[rankIndex(them.rankScore)].tier;
     final myNeededColor =
         sameRankTier &&
             myRpNeeded != null &&
@@ -683,7 +645,7 @@ class _RankedCompare extends StatelessWidget {
         _RankedRow(
           label: 'RP',
           myChild: Text(
-            fmtRp(me.rankScore),
+            formatNumber(me.rankScore),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -692,7 +654,7 @@ class _RankedCompare extends StatelessWidget {
             ),
           ),
           theirChild: Text(
-            fmtRp(them.rankScore),
+            formatNumber(them.rankScore),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -729,7 +691,7 @@ class _RankedCompare extends StatelessWidget {
           _RankedRow(
             label: 'RP needed',
             myChild: Text(
-              myRpNeeded != null ? '${fmtRp(myRpNeeded)} RP' : '—',
+              myRpNeeded != null ? '${formatNumber(myRpNeeded)} RP' : '—',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -740,7 +702,7 @@ class _RankedCompare extends StatelessWidget {
               ),
             ),
             theirChild: Text(
-              theirRpNeeded != null ? '${fmtRp(theirRpNeeded)} RP' : '—',
+              theirRpNeeded != null ? '${formatNumber(theirRpNeeded)} RP' : '—',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -817,13 +779,8 @@ class _LegendCompare extends StatelessWidget {
   }
 
   Map<String, int> _statsFor(PlayerStats player) {
-    try {
-      return _deduped(
-        player.legendStats.firstWhere((l) => l.name == legendName),
-      );
-    } catch (_) {
-      return {};
-    }
+    final matches = player.legendStats.where((l) => l.name == legendName);
+    return matches.isEmpty ? {} : _deduped(matches.first);
   }
 
   @override
@@ -898,7 +855,7 @@ class _LegendCompare extends StatelessWidget {
                 ),
                 Expanded(
                   child: Text(
-                    myVal != null ? fmtRp(myVal) : '—',
+                    myVal != null ? formatNumber(myVal) : '—',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -909,7 +866,7 @@ class _LegendCompare extends StatelessWidget {
                 ),
                 Expanded(
                   child: Text(
-                    theirVal != null ? fmtRp(theirVal) : '—',
+                    theirVal != null ? formatNumber(theirVal) : '—',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -1039,12 +996,10 @@ class _FavoriteTile extends ConsumerWidget {
     String rpText = '';
 
     if (stats != null) {
-      statusColor = AppTheme.statusColor(
-        stats.isInGame ? 'UP' : (stats.isOnline ? 'SLOW' : 'DOWN'),
-      );
-      final idx = rankIdx(stats.rankScore);
+      statusColor = playerPresenceColor(stats);
+      final idx = rankIndex(stats.rankScore);
       rankLabel = kRankLadder[idx].label;
-      rpText = '${fmtRp(stats.rankScore)} RP';
+      rpText = '${formatNumber(stats.rankScore)} RP';
     }
 
     return ListTile(

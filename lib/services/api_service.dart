@@ -43,7 +43,7 @@ class ApiService {
       final data = response.data is Map<String, dynamic>
           ? response.data as Map<String, dynamic>
           : {'_raw': response.data};
-      if (!noCache) _cache.save(key, data);
+      if (!noCache) await _cache.save(key, data);
       return ApiResult(data);
     } on DioException catch (e) {
       if (!noCache) {
@@ -62,6 +62,7 @@ class ApiService {
   Future<ApiResult<List<dynamic>>> getList(
     String endpoint, {
     Map<String, dynamic>? params,
+    bool noCache = false,
   }) async {
     final key = _cacheKey(endpoint, params);
     try {
@@ -76,12 +77,14 @@ class ApiService {
       } else {
         data = [];
       }
-      _cache.save(key, data);
+      if (!noCache) await _cache.save(key, data);
       return ApiResult(data);
     } on DioException catch (e) {
-      final cached = _cache.load(key);
-      if (cached != null) {
-        return ApiResult(cached.data as List<dynamic>, staleAt: cached.savedAt);
+      if (!noCache) {
+        final cached = _cache.load(key);
+        if (cached != null) {
+          return ApiResult(cached.data as List<dynamic>, staleAt: cached.savedAt);
+        }
       }
       throw Exception(friendlyError(e));
     }

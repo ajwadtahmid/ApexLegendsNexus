@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/prefs_keys.dart';
 import '../models/player_stats.dart';
 
 // ── Stat snapshots (RP history for graph) ─────────────────────────────────────
@@ -27,11 +28,9 @@ const _maxSnapshots = 30;
 String _snapshotKeyFor(String? uid) =>
     (uid != null && uid.isNotEmpty) ? 'stat_snapshots_$uid' : 'stat_snapshots';
 
-Future<List<StatSnapshot>> loadSnapshots({String? uid}) async {
-  final prefs = await SharedPreferences.getInstance();
+List<StatSnapshot> _parseSnapshots(String? raw) {
   try {
-    final raw = prefs.getString(_snapshotKeyFor(uid)) ?? '[]';
-    final list = jsonDecode(raw) as List;
+    final list = jsonDecode(raw ?? '[]') as List;
     return list
         .whereType<Map<String, dynamic>>()
         .map(StatSnapshot.fromJson)
@@ -41,12 +40,18 @@ Future<List<StatSnapshot>> loadSnapshots({String? uid}) async {
   }
 }
 
+Future<List<StatSnapshot>> loadSnapshots({String? uid}) async {
+  final prefs = await SharedPreferences.getInstance();
+  return _parseSnapshots(prefs.getString(_snapshotKeyFor(uid)));
+}
+
 Future<void> appendSnapshot(
   PlayerStats stats, {
   String? uid,
   bool deduplicateRp = true,
 }) async {
-  final snapshots = await loadSnapshots(uid: uid);
+  final prefs = await SharedPreferences.getInstance();
+  final snapshots = _parseSnapshots(prefs.getString(_snapshotKeyFor(uid)));
   final now = DateTime.now();
 
   if (snapshots.isNotEmpty) {
@@ -61,22 +66,28 @@ Future<void> appendSnapshot(
       ? snapshots.sublist(snapshots.length - _maxSnapshots)
       : snapshots;
 
-  final prefs = await SharedPreferences.getInstance();
   await prefs.setString(
     _snapshotKeyFor(uid),
     jsonEncode(trimmed.map((s) => s.toJson()).toList()),
   );
 }
 
+/// Returns the RP gained over the last 24 hours.
+/// Uses the most recent snapshot from 24+ hours ago as baseline; falls back
+/// to the first available snapshot if all data is within the last 24 hours.
+int? computeDelta(List<StatSnapshot> snaps, int currentRp) {
+  if (snaps.isEmpty) return null;
+  final last24Hours = DateTime.now().subtract(const Duration(hours: 24));
+  final before24h = snaps.where((s) => s.timestamp.isBefore(last24Hours)).toList();
+  if (before24h.isNotEmpty) return currentRp - before24h.last.rp;
+  return currentRp - snaps.first.rp;
+}
+
 // ── Legend stats persistence (merge on each API refresh) ──────────────────────
 
-const _legendKey = 'legend_stats';
-
-Future<List<LegendStat>> loadLegendStats() async {
-  final prefs = await SharedPreferences.getInstance();
+List<LegendStat> _parseLegendStats(String? raw) {
   try {
-    final raw = prefs.getString(_legendKey) ?? '[]';
-    final list = jsonDecode(raw) as List;
+    final list = jsonDecode(raw ?? '[]') as List;
     return list
         .whereType<Map<String, dynamic>>()
         .map(LegendStat.fromJson)
@@ -86,12 +97,18 @@ Future<List<LegendStat>> loadLegendStats() async {
   }
 }
 
+Future<List<LegendStat>> loadLegendStats() async {
+  final prefs = await SharedPreferences.getInstance();
+  return _parseLegendStats(prefs.getString(PrefsKeys.legendStats));
+}
+
 // Merges incoming legend data into stored data:
 // - existing legend + existing tracker → update value
 // - existing legend + new tracker → append tracker
 // - new legend → add it
 Future<List<LegendStat>> mergeLegendStats(List<LegendStat> incoming) async {
-  final stored = await loadLegendStats();
+  final prefs = await SharedPreferences.getInstance();
+  final stored = _parseLegendStats(prefs.getString(PrefsKeys.legendStats));
 
   if (incoming.isEmpty) return stored;
 
@@ -104,9 +121,8 @@ Future<List<LegendStat>> mergeLegendStats(List<LegendStat> incoming) async {
   final merged = map.values.toList()
     ..sort((a, b) => b.killCount.compareTo(a.killCount));
 
-  final prefs = await SharedPreferences.getInstance();
   await prefs.setString(
-    _legendKey,
+    PrefsKeys.legendStats,
     jsonEncode(merged.map((s) => s.toJson()).toList()),
   );
   return merged;

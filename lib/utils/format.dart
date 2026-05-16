@@ -1,18 +1,20 @@
+import 'package:intl/intl.dart';
 import '../constants/rank_constants.dart';
 
-String fmtRp(int v) {
-  final s = v.toString();
-  final buf = StringBuffer();
-  for (var i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-    buf.write(s[i]);
-  }
-  return buf.toString();
-}
+final _rpFormat = NumberFormat('#,###');
 
-int rankIdx(int rp) {
+String formatNumber(int v) => _rpFormat.format(v);
+
+int rankIndex(int rp) {
   for (var i = kRankLadder.length - 1; i >= 0; i--) {
     if (rp >= kRankLadder[i].rp) return i;
   }
   return 0;
+}
+
+String timeAgo(DateTime t) {
+  final diff = DateTime.now().difference(t);
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+  if (diff.inHours < 24) return '${diff.inHours}h ago';
+  return '${diff.inDays}d ago';
 }

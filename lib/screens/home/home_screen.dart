@@ -15,6 +15,8 @@ import '../../providers/server_provider.dart';
 import '../../providers/news_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/notification_service.dart';
+import '../../constants/api_constants.dart';
+import '../../utils/format.dart' show formatNumber, timeAgo;
 import '../../utils/theme.dart';
 import '../../utils/error_messages.dart';
 import '../../widgets/shimmer.dart';
@@ -91,22 +93,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               mapAsync.when(
                 data: (result) {
                   final modes = _buildModes(result.data);
-                  if (_modeIndex >= modes.length) {
-                    WidgetsBinding.instance.addPostFrameCallback(
-                      (_) => setState(() => _modeIndex = 0),
-                    );
-                  }
+                  final idx = _modeIndex.clamp(0, modes.length - 1);
                   return Column(
                     children: [
                       _ModePicker(
                         modes: modes.map((m) => m.label).toList(),
-                        selected: _modeIndex.clamp(0, modes.length - 1),
+                        selected: idx,
                         onSelect: (i) => setState(() => _modeIndex = i),
                       ),
                       const SizedBox(height: AppTheme.md),
-                      _MapCard(
-                        mode: modes[_modeIndex.clamp(0, modes.length - 1)],
-                      ),
+                      _MapCard(mode: modes[idx]),
                     ],
                   );
                 },
@@ -323,7 +319,8 @@ class _MapCardState extends State<_MapCard> {
   void didUpdateWidget(_MapCard old) {
     super.didUpdateWidget(old);
     if (old.mode.label != widget.mode.label ||
-        old.mode.current.map != widget.mode.current.map) {
+        old.mode.current.map != widget.mode.current.map ||
+        old.mode.current.remainingSecs != widget.mode.current.remainingSecs) {
       _reset(widget.mode.current.remainingSecs);
     }
   }
@@ -333,10 +330,11 @@ class _MapCardState extends State<_MapCard> {
     _remaining = secs;
     _startedAt = DateTime.now();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        final elapsed = DateTime.now().difference(_startedAt).inSeconds;
-        setState(() => _remaining = (secs - elapsed).clamp(0, secs));
-      }
+      if (!mounted) return;
+      final elapsed = DateTime.now().difference(_startedAt).inSeconds;
+      final newRemaining = (secs - elapsed).clamp(0, secs);
+      setState(() => _remaining = newRemaining);
+      if (newRemaining == 0) _timer?.cancel();
     });
   }
 
@@ -528,7 +526,6 @@ class _ServerSummaryCard extends StatelessWidget {
     'ApexOauth_Crossplay',
   };
 
-  // Returns 'UP', 'PARTIAL', or 'DOWN'
   String get _level {
     final priority = status.services.entries
         .where((e) => _priorityKeys.contains(e.key))
@@ -542,7 +539,7 @@ class _ServerSummaryCard extends StatelessWidget {
     return 'UP';
   }
 
-  Color get _color => switch (_level) {
+  Color get _statusColor => switch (_level) {
     'DOWN' => AppTheme.red,
     'PARTIAL' => AppTheme.orange,
     _ => AppTheme.green,
@@ -557,7 +554,7 @@ class _ServerSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SummaryTile(
-      leading: StatusDot(color: _color),
+      leading: StatusDot(color: _statusColor),
       title: 'Server Status',
       subtitle: _subtitle,
       onTap: onTap,
@@ -877,10 +874,6 @@ class _PredatorSummaryCard extends StatelessWidget {
   }
 }
 
-String _formatRp(int rp) {
-  return NumberFormat('#,###').format(rp);
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // Predator cutoff detail page (pushed from home)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -889,18 +882,11 @@ class _PredatorPage extends StatelessWidget {
   final PredatorResponse data;
   const _PredatorPage({required this.data});
 
-  static const _platforms = [
-    ('PC', 'PC'),
-    ('PS4', 'PlayStation'),
-    ('X1', 'Xbox'),
-    ('SWITCH', 'Nintendo Switch'),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final entries = _platforms
-        .map((p) => (p.$2, data.forPlatform(p.$1)))
-        .where((e) => e.$2 != null)
+    final entries = ApiConstants.platforms
+        .map((key) => (key, ApiConstants.platformLabels[key]!, data.forPlatform(key)))
+        .where((e) => e.$3 != null)
         .toList();
 
     return Scaffold(
@@ -908,10 +894,7 @@ class _PredatorPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppTheme.md),
         children: [
-          ...entries.map((e) {
-            final key = _platforms.firstWhere((p) => p.$2 == e.$1).$1;
-            return _PlatformCard(platformKey: key, name: e.$1, info: e.$2!);
-          }),
+          ...entries.map((e) => _PlatformCard(platformKey: e.$1, name: e.$2, info: e.$3!)),
           const SizedBox(height: AppTheme.md),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppTheme.sm),
@@ -927,35 +910,6 @@ class _PredatorPage extends StatelessWidget {
   }
 }
 
-Widget _platformIcon(String platformKey) {
-  switch (platformKey) {
-    case 'PS4':
-      return const FaIcon(
-        FontAwesomeIcons.playstation,
-        color: AppTheme.blue,
-        size: 16,
-      );
-    case 'X1':
-      return const FaIcon(
-        FontAwesomeIcons.xbox,
-        color: AppTheme.green,
-        size: 16,
-      );
-    case 'SWITCH':
-      return const FaIcon(
-        FontAwesomeIcons.gamepad,
-        color: AppTheme.red,
-        size: 16,
-      );
-    default:
-      return const FaIcon(
-        FontAwesomeIcons.desktop,
-        color: AppTheme.muted,
-        size: 16,
-      );
-  }
-}
-
 class _PlatformCard extends StatelessWidget {
   final String platformKey;
   final String name;
@@ -967,12 +921,12 @@ class _PlatformCard extends StatelessWidget {
     required this.info,
   });
 
-  String _timeAgo(DateTime t) {
-    final diff = DateTime.now().difference(t);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
+  static Widget _icon(String platformKey) => switch (platformKey) {
+    'PS4' => const FaIcon(FontAwesomeIcons.playstation, color: AppTheme.blue, size: 16),
+    'X1'  => const FaIcon(FontAwesomeIcons.xbox, color: AppTheme.green, size: 16),
+    'SWITCH' => const FaIcon(FontAwesomeIcons.gamepad, color: AppTheme.red, size: 16),
+    _ => const FaIcon(FontAwesomeIcons.desktop, color: AppTheme.muted, size: 16),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -988,7 +942,7 @@ class _PlatformCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _platformIcon(platformKey),
+              _icon(platformKey),
               const SizedBox(width: AppTheme.xs),
               Text(
                 name.toUpperCase(),
@@ -1001,7 +955,7 @@ class _PlatformCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                _timeAgo(info.updatedAt),
+                info.updatedAt != null ? timeAgo(info.updatedAt!) : '—',
                 style: const TextStyle(color: AppTheme.muted, fontSize: 12),
               ),
             ],
@@ -1012,7 +966,7 @@ class _PlatformCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                _formatRp(info.minRp),
+                formatNumber(info.minRp),
                 style: const TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 32,
@@ -1032,13 +986,19 @@ class _PlatformCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${_formatRp(info.totalMastersAndPreds)} Masters + Preds',
+            '${formatNumber(info.totalMastersAndPreds)} Masters + Preds',
             style: const TextStyle(color: AppTheme.muted, fontSize: 13),
           ),
         ],
       ),
     );
   }
+}
+
+Color _latencyColor(int ms) {
+  if (ms < 50) return AppTheme.green;
+  if (ms < 200) return AppTheme.orange;
+  return AppTheme.red;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1128,14 +1088,14 @@ class _ServerStatusPage extends StatelessWidget {
                     spacing: AppTheme.sm,
                     runSpacing: 4,
                     children: svc.regions.entries.map((e) {
-                      final rc = AppTheme.statusColor(e.value.status);
+                      final rc = _latencyColor(e.value.responseTime);
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           StatusDot(color: rc, size: 6),
                           const SizedBox(width: 4),
                           Text(
-                            e.key,
+                            '${e.key}  ${e.value.responseTime}ms',
                             style: const TextStyle(
                               color: AppTheme.muted,
                               fontSize: 11,

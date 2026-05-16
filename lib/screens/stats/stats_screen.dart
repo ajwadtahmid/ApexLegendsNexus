@@ -9,6 +9,7 @@ import '../../providers/settings_provider.dart';
 import '../../utils/error_messages.dart';
 import '../../utils/storage.dart';
 import '../../utils/theme.dart';
+import '../../utils/uid_search.dart';
 import '../../widgets/graph_card.dart';
 import '../../widgets/platform_picker.dart';
 import '../../widgets/player_profile.dart';
@@ -107,12 +108,13 @@ class _StatsViewState extends ConsumerState<_StatsView> {
   }
 
   void _showHelpfulTipsIfNeeded() {
-    final settings = widget.settings;
+    if (!widget.settings.helpfulTipsEnabled || _toastShown) return;
     final isRecentlyLaunched =
         DateTime.now().difference(_appLaunchTime).inSeconds < 2;
-    if (settings.helpfulTipsEnabled && !_toastShown && isRecentlyLaunched) {
-      setState(() => _toastShown = true);
-      toastification.show(
+    if (!isRecentlyLaunched) return;
+    if (!mounted) return;
+    setState(() => _toastShown = true);
+    toastification.show(
         context: context,
         type: ToastificationType.info,
         style: ToastificationStyle.flat,
@@ -131,8 +133,7 @@ class _StatsViewState extends ConsumerState<_StatsView> {
             spreadRadius: 0,
           ),
         ],
-      );
-    }
+    );
   }
 
   @override
@@ -272,7 +273,10 @@ class _StatsBodyState extends ConsumerState<_StatsBody> {
   @override
   void didUpdateWidget(_StatsBody old) {
     super.didUpdateWidget(old);
-    if (old.stats != widget.stats) _loadAndAppend();
+    if (old.stats.uid != widget.stats.uid ||
+        old.stats.rankScore != widget.stats.rankScore) {
+      _loadAndAppend();
+    }
   }
 
   Future<void> _loadAndAppend() async {
@@ -286,32 +290,9 @@ class _StatsBodyState extends ConsumerState<_StatsBody> {
       setState(() {
         _snapshots = snaps;
         _mergedLegends = legends;
-        _rpDelta = _computeTodayDelta(snaps);
+        _rpDelta = computeDelta(snaps, widget.stats.rankScore);
       });
     }
-  }
-
-  int? _computeTodayDelta(List<StatSnapshot> snaps) {
-    if (snaps.isEmpty) return null;
-    final now = DateTime.now();
-    final last24Hours = now.subtract(const Duration(hours: 24));
-
-    // Find the most recent snapshot from 24+ hours ago
-    final before24h = snaps
-        .where((s) => s.timestamp.isBefore(last24Hours))
-        .toList();
-
-    if (before24h.isNotEmpty) {
-      // Use the last snapshot from 24+ hours ago as baseline
-      return widget.stats.rankScore - before24h.last.rp;
-    }
-
-    // All snapshots are within the last 24 hours, use the first one as baseline
-    if (snaps.isNotEmpty) {
-      return widget.stats.rankScore - snaps.first.rp;
-    }
-
-    return null;
   }
 
   @override
@@ -398,31 +379,9 @@ class _PlayerLookupFormState extends ConsumerState<_PlayerLookupForm> {
 
   Future<void> _toggleUidSearch(bool value) async {
     if (value && !_searchByUid) {
-      final prefs = ref.read(sharedPreferencesProvider);
-      final shownWarning = prefs.getBool('uid_search_warning_shown') ?? false;
-
-      if (!shownWarning) {
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Text('Finding Your UID'),
-              content: const Text(
-                'You can find the UID from deep search on apexlegendsstatus.com',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Got it'),
-                ),
-              ],
-            ),
-          );
-          await prefs.setBool('uid_search_warning_shown', true);
-        }
-      }
+      await showUidWarningIfNeeded(context, ref);
     }
-    setState(() => _searchByUid = value);
+    if (mounted) setState(() => _searchByUid = value);
   }
 
   Future<void> _submit() async {

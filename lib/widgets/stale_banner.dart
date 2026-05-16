@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
+import '../utils/format.dart' show timeAgo;
 import '../utils/theme.dart';
 
 class StaleBanner extends StatelessWidget {
   final DateTime staleAt;
   const StaleBanner({super.key, required this.staleAt});
-
-  String get _ago {
-    final diff = DateTime.now().difference(staleAt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +26,7 @@ class StaleBanner extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            'Offline · cached $_ago',
+            'Offline · cached ${timeAgo(staleAt)}',
             style: const TextStyle(color: AppTheme.orange, fontSize: 12),
           ),
         ],

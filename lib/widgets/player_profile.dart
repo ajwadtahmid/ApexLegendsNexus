@@ -9,6 +9,13 @@ import '../utils/format.dart';
 import '../utils/theme.dart';
 import 'status_dot.dart';
 
+/// Returns the color for a player's online presence indicator.
+Color playerPresenceColor(PlayerStats stats) {
+  if (stats.isInGame) return AppTheme.green;
+  if (stats.isOnline) return AppTheme.orange;
+  return AppTheme.red;
+}
+
 // ── Player info card ──────────────────────────────────────────────────────────
 
 class PlayerInfoCard extends StatelessWidget {
@@ -37,11 +44,7 @@ class PlayerInfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              StatusDot(
-                color: AppTheme.statusColor(
-                  stats.isInGame ? 'UP' : (stats.isOnline ? 'SLOW' : 'DOWN'),
-                ),
-              ),
+              StatusDot(color: playerPresenceColor(stats)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -65,7 +68,7 @@ class PlayerInfoCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Level ${stats.level}  •  ${stats.rank}  •  ${fmtRp(stats.rankScore)} RP',
+                  'Level ${stats.level}  •  ${stats.rank}  •  ${formatNumber(stats.rankScore)} RP',
                   style: const TextStyle(color: AppTheme.muted, fontSize: 13),
                 ),
               ),
@@ -115,7 +118,7 @@ class PlayerInfoCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          fmtRp(t.value),
+                          formatNumber(t.value),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -150,7 +153,7 @@ class RankedInfoCard extends ConsumerWidget {
     );
 
     final isPred = predVal != null && myRp >= predVal;
-    final idx = rankIdx(myRp);
+    final idx = rankIndex(myRp);
     final current = kRankLadder[idx];
     final currentColor = isPred ? kPredatorColor : current.color;
     final currentLabel = isPred ? kApexPredatorRank : current.label;
@@ -202,7 +205,7 @@ class RankedInfoCard extends ConsumerWidget {
                     ),
                     child: Center(
                       child: Text(
-                        isPred ? 'PR' : (current.div ?? 'M'),
+                        isPred ? 'PR' : (current.division ?? 'M'),
                         style: TextStyle(
                           color: currentColor,
                           fontSize: 13,
@@ -225,7 +228,7 @@ class RankedInfoCard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        '${fmtRp(myRp)} RP',
+                        '${formatNumber(myRp)} RP',
                         style: const TextStyle(
                           color: AppTheme.muted,
                           fontSize: 13,
@@ -251,7 +254,7 @@ class RankedInfoCard extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${fmtRp(curRp)} RP',
+                      '${formatNumber(curRp)} RP',
                       style: const TextStyle(
                         color: AppTheme.muted,
                         fontSize: 11,
@@ -266,7 +269,7 @@ class RankedInfoCard extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      '${fmtRp(nextRp)} RP',
+                      '${formatNumber(nextRp)} RP',
                       style: const TextStyle(
                         color: AppTheme.muted,
                         fontSize: 11,
@@ -341,7 +344,7 @@ class LegendStatsSection extends StatelessWidget {
                           ),
                           Text(
                             l.killCount > 0
-                                ? '${fmtRp(l.killCount)} kills'
+                                ? '${formatNumber(l.killCount)} kills'
                                 : 'No kills',
                             style: const TextStyle(
                               color: AppTheme.muted,
@@ -380,7 +383,7 @@ class _LegendCard extends StatelessWidget {
 
   String get _imageKey => legend.name.toLowerCase().replaceAll(' ', '_');
 
-  Color _roleColor(LegendRole role) => switch (role) {
+  static Color _roleColor(LegendRole role) => switch (role) {
     LegendRole.assault => const Color(0xFFEF5350),
     LegendRole.controller => const Color(0xFF42A5F5),
     LegendRole.recon => const Color(0xFF26C6DA),
@@ -525,7 +528,7 @@ class _StatTile extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            fmtRp(tracker.value),
+            formatNumber(tracker.value),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
         ],

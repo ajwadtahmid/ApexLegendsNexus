@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../utils/storage.dart';
 import '../utils/theme.dart';
-import '../utils/format.dart' show fmtRp;
+import '../utils/format.dart' show formatNumber;
 
 class GraphCard extends StatelessWidget {
   final List<StatSnapshot> snapshots;
@@ -13,6 +13,25 @@ class GraphCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (snapshots.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(AppTheme.md),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        ),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.muted,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
+        ),
+      );
+    }
+
     final spots = snapshots.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.rp.toDouble());
     }).toList();
@@ -20,6 +39,8 @@ class GraphCard extends StatelessWidget {
     final dateLabel = snapshots.length >= 2
         ? '${DateFormat('MMM d').format(snapshots.first.timestamp)} – ${DateFormat('MMM d').format(snapshots.last.timestamp)}'
         : '';
+
+    final isCurved = spots.length >= 2;
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.md),
@@ -64,7 +85,7 @@ class GraphCard extends StatelessWidget {
                       final idx = s.x.toInt().clamp(0, snapshots.length - 1);
                       final snap = snapshots[idx];
                       return LineTooltipItem(
-                        '${fmtRp(snap.rp)} RP\n${DateFormat('MMM d, h:mm a').format(snap.timestamp)}',
+                        '${formatNumber(snap.rp)} RP\n${DateFormat('MMM d, h:mm a').format(snap.timestamp)}',
                         const TextStyle(
                           color: AppTheme.textPrimary,
                           fontSize: 11,
@@ -91,7 +112,7 @@ class GraphCard extends StatelessWidget {
                       show: true,
                       color: AppTheme.accent.withAlpha(40),
                     ),
-                    isCurved: true,
+                    isCurved: isCurved,
                     curveSmoothness: 0.3,
                   ),
                 ],

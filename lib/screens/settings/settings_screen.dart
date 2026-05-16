@@ -431,7 +431,7 @@ class SettingsScreen extends ConsumerWidget {
                         'Your linked player and saved favorites will be removed.',
                     onConfirm: () async {
                       await ref.read(playerSettingsProvider.notifier).clear();
-                      ref.read(searchStateProvider.notifier).clearFavorites();
+                      await ref.read(searchStateProvider.notifier).clearFavorites();
                     },
                   ),
                 ),
@@ -515,9 +515,9 @@ class SettingsScreen extends ConsumerWidget {
           final (tab, label) = option;
           final selected = tab == current;
           return SimpleDialogOption(
-            onPressed: () {
-              ref.read(playerSettingsProvider.notifier).setDefaultTab(tab);
+            onPressed: () async {
               Navigator.pop(ctx);
+              await ref.read(playerSettingsProvider.notifier).setDefaultTab(tab);
             },
             child: Row(
               children: [
@@ -577,7 +577,7 @@ class SettingsScreen extends ConsumerWidget {
               if (minutes > 0 && current == 0) {
                 await NotificationService.requestPermissions();
               }
-              ref
+              await ref
                   .read(playerSettingsProvider.notifier)
                   .setMapNotifyMinutesBefore(minutes);
             },
@@ -617,11 +617,11 @@ class SettingsScreen extends ConsumerWidget {
         children: _refreshOptions.map((minutes) {
           final selected = minutes == current;
           return SimpleDialogOption(
-            onPressed: () {
-              ref
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await ref
                   .read(playerSettingsProvider.notifier)
                   .setStatsRefreshMinutes(minutes);
-              Navigator.pop(ctx);
             },
             child: Row(
               children: [
@@ -675,7 +675,7 @@ class SettingsScreen extends ConsumerWidget {
     BuildContext context, {
     required String title,
     required String body,
-    required VoidCallback onConfirm,
+    required Future<void> Function() onConfirm,
   }) {
     return showDialog(
       context: context,
@@ -692,9 +692,9 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              onConfirm();
+              await onConfirm();
             },
             child: const Text('Confirm', style: TextStyle(color: AppTheme.red)),
           ),
