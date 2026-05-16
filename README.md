@@ -1,204 +1,252 @@
 # Apex Legends Nexus
 
-**Your complete Apex Legends companion.**
+<p align="center">
+  <img src="assets/logos/icon_1024.png" alt="Apex Legends Nexus" width="96" />
+</p>
 
-## Description
+<p align="center">
+  <strong>Your offline-first Apex Legends companion.</strong><br/>
+  Player stats · Map rotations · Server health · Push notifications
+</p>
 
-Apex Legends Nexus is your complete companion app for Apex Legends. Whether you're grinding ranked, tracking progress across multiple legends, or just want to know which map is loading next, Apex Legends Nexus gives you instant access to everything that matters.
-
-Search for any player in seconds and dive deep into their statistics — rank progression and equipped tracker info. Get real-time updates on map rotations so you're never caught off guard. Monitor server health across all regions to understand connection quality before you queue. No login required. Just pure, fast, local-first Apex Legends data at your fingertips.
-
-## ✨ Features
-
-- **Player Search** - Look up detailed statistics for any Apex Legends player
-- **Player Stats** - View comprehensive player data including:
-  - Rank and RP progression
-  - Legend-specific statistics
-  - Lifetime stats and seasonal performance
-  - Win rates and kill/death ratios
-- **Map Rotations** - Check current and upcoming map rotations
-- **Server Status** - Real-time server status for all regions
-- **Push Notifications** - Get alerts for important updates without opening the app
-- **Multi-Platform** - Available on Android, iOS, Windows, and Linux
-
-## 📱 Platform Support
-
-| Platform | Status | Installation |
-|----------|--------|--------------|
-| **Android** | ✅ Stable | [Google Play Store](https://play.google.com/store) |
-| **iOS** | ✅ WIP | [Apple App Store](https://apps.apple.com) |
-| **Windows** | ✅ Stable | Windows installer (.exe) |
-| **Linux** | ✅ Stable | AppImage (portable) |
-
-## 🚀 Installation
-
-### Android
-1. Install the latest release from [Google Play Store](https://play.google.com/store)
-
-### iOS (WIP)
-1. Install the latest release from [Apple App Store](https://apps.apple.com)
-
-### Windows
-1. Download `apex-legends-nexus-installer.exe` from [Releases](../../releases)
-2. Run the installer (admin privileges required)
-3. Follow the installation wizard
-4. Launch from Start Menu or Desktop shortcut
-
-### Linux
-1. Download `apex-legends-nexus-*.AppImage` from [Releases](../../releases)
-2. Make it executable:
-   ```bash
-   chmod +x apex-legends-nexus-*.AppImage
-   ```
-3. Run it:
-   ```bash
-   ./apex-legends-nexus-*.AppImage
-   ```
-
-## 🔧 Development
-
-### Prerequisites
-- Flutter SDK 3.11.5 or later
-- Dart SDK (included with Flutter)
-- For Android: Java 17, Android SDK
-- For Windows: Visual Studio or Visual Studio Build Tools
-- For Linux: GTK 3 development libraries
-- For iOS: Xcode 14+
-
-### Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/ApexLegendsNexus.git
-   cd ApexLegendsNexus
-   ```
-
-2. **Install dependencies**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Generate environment code**
-   ```bash
-   dart run build_runner build
-   ```
-
-4. **Run the app**
-   ```bash
-   # Development mode
-   flutter run
-   
-   # Release mode
-   flutter run --release
-   ```
-
-### Configuration
-
-This app uses **envied** for secure credential management. Environment variables are obfuscated at compile-time rather than stored as plain text.
-
-To configure:
-1. Create a `.env` file in the project root:
-   ```env
-   PROXY_URL=<your-proxy-url>
-   CLIENT_TOKEN=<your-client-token>
-   ```
-
-2. Regenerate environment code:
-   ```bash
-   dart run build_runner build
-   ```
-
-The credentials are now compiled into the binary and obfuscated - they won't be visible in the distributed app or source code.
-
-## 🏗️ Building Releases
-
-### Android
-```bash
-flutter build appbundle --release
-```
-Output: `build/app/outputs/bundle/release/app-release.aab`
-
-### Windows
-```bash
-flutter build windows --release
-# Then build the installer with NSIS
-```
-Output: `apex-legends-nexus-installer.exe`
-
-### Linux
-```bash
-flutter build linux --release
-# AppImage is built automatically by GitHub Actions
-```
-
-### iOS
-```bash
-flutter build ios --release
-```
-
-## 🔐 Security & Privacy
-
-- **No user authentication required** - All data is public (player stats, maps, server status)
-- **Obfuscated credentials** - API credentials are XOR-obfuscated at compile-time using `envied`
-- **No data collection** - The app does not collect or store user data
-- **Open source** - Full transparency of how data is handled
-
-## ⚠️ Disclaimer
-
-This is an **unofficial** companion app for Apex Legends. It is not made by, affiliated with, endorsed by, or in any way associated with Electronic Arts or Respawn Entertainment.
-
-Apex Legends is a registered trademark of Electronic Arts Inc.
-
-## 🌐 Data Sources
-
-This app fetches data from:
-- **Player Statistics** - Public Apex Legends API data
-- **Map Rotations** - Official rotation information
-- **Server Status** - Real-time server health data
-
-All data is sourced from publicly available APIs and is not stored locally beyond caching for performance.
-
-## 📋 Architecture
-
-Built with:
-- **Flutter** - Cross-platform UI framework
-- **Riverpod** - State management and dependency injection
-- **Dio** - HTTP client with interceptors
-- **Shared Preferences** - Local data persistence
-- **Flutter Local Notifications** - Push notifications for important updates
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 Code Style
-
-This project follows:
-- [Dart Style Guide](https://dart.dev/guides/language/effective-dart/style)
-- [Flutter Best Practices](https://docs.flutter.dev/testing/best-practices)
-
-## 📄 License
-
-This project is licensed under the GNU General Public License v3.0 - see [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Flutter](https://flutter.dev) - The amazing framework
-- [Riverpod](https://riverpod.dev) - State management
-- Apex Legends community for the inspiration
-
-## 📞 Support
-
-For issues, feature requests, or questions:
-- Open an [issue](../../issues)
-- Check existing [discussions](../../discussions)
+<p align="center">
+  <img alt="Release" src="https://img.shields.io/github/v/release/ajwadtahmid/ApexLegendsNexus?color=orange&label=release" />
+  <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.x-blue?logo=flutter&logoColor=white" />
+  <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0-green" />
+  <img alt="Android" src="https://img.shields.io/badge/Android-supported-brightgreen?logo=android&logoColor=white" />
+  <img alt="iOS" src="https://img.shields.io/badge/iOS-supported-brightgreen?logo=apple&logoColor=white" />
+  <img alt="Windows" src="https://img.shields.io/badge/Windows-supported-brightgreen?logo=windows11&logoColor=white" />
+  <img alt="Linux" src="https://img.shields.io/badge/Linux-supported-brightgreen?logo=linux&logoColor=white" />
+</p>
 
 ---
 
-**Note:** This is a fan-made project and is not affiliated with or endorsed by Electronic Arts or Respawn Entertainment.
+## Overview
+
+Apex Legends Nexus is an unofficial companion app for Apex Legends. No sign-in required — just link your in-game name and start tracking. All data is cached locally so the app keeps working when servers are slow.
+
+- Look up any player's rank, legend stats, and RP history
+- See which map is active right now and what's coming next
+- Get notified before the map rotates so you're never mid-game when it swaps
+- Check server latency per region before you queue
+- Compare your stats head-to-head with any other player
+
+> **Disclaimer:** Unofficial fan project. Not made by, affiliated with, or endorsed by Electronic Arts or Respawn Entertainment. Apex Legends is a trademark of Electronic Arts Inc.
+
+---
+
+## Screenshots
+
+| Home | Stats | Search | Settings |
+|------|-------|--------|----------|
+| ![Home](assets/Screenshots/desktop/Screenshot_20260513_114003.png) | ![Stats](assets/Screenshots/desktop/Screenshot_20260513_114022.png) | ![Search](assets/Screenshots/desktop/Screenshot_20260513_114059.png) | ![Settings](assets/Screenshots/desktop/Screenshot_20260513_114113.png) |
+
+---
+
+## Features
+
+### For Players
+
+- **Player Stats** — Rank, RP, current legend, equipped trackers, and a rolling 24-hour RP delta badge. Supports search by name or numeric UID.
+- **RP History Graph** — Visual chart of your rank progression over time, built from snapshots taken every 30 minutes.
+- **Legend Stats** — Kill counts and tracker values per legend, merged across sessions and sorted by most-played.
+- **Map Rotations** — Live countdown for Ranked, Pubs, and Mixtape. Shows current map, time remaining, and what loads next. Switches automatically when the rotation changes.
+- **Predator Cutoff** — Current minimum RP to reach Apex Predator on PC, PlayStation, Xbox, and Switch.
+- **Server Status** — Health of Origin Login, EA Accounts, Nova Fusion, and Apex Crossplay. Drill down to see per-region latency in milliseconds, color-coded green/orange/red.
+- **Latest News** — In-game news feed from the official Apex feed.
+- **Player Compare** — Side-by-side comparison of ranked stats or per-legend trackers with any searched player.
+- **Favorites** — Star players to pin them to the search screen for one-tap access.
+
+### Notifications
+
+- Map rotation alerts: get notified 5, 10, or 15 minutes before the map changes.
+- Choose which modes to track: Ranked, Pubs, Mixtape.
+- Notifications fire even when the app is closed (via background fetch on iOS/Android).
+
+### App
+
+- **Offline-first** — All API responses are cached locally and shown with a staleness banner when the network is unavailable.
+- **No account required** — Data is fetched using your public in-game name or UID.
+- **Dark theme** — Designed for low-light gaming sessions.
+
+---
+
+## Installation
+
+### Android
+
+Download from Google Play (coming soon) or the latest or `.aab` from the [Releases](../../releases) page.
+
+### iOS
+
+Download from the App Store (coming soon).
+
+### Windows
+
+1. Download `apex-legends-nexus-installer.exe` from [Releases](../../releases)
+2. Run the installer and follow the wizard
+3. Launch from the Start Menu or Desktop shortcut
+
+### Linux
+
+1. Download `apex-legends-nexus-*.AppImage` from [Releases](../../releases)
+2. Make executable and run:
+
+   ```bash
+   chmod +x apex-legends-nexus-*.AppImage
+   ./apex-legends-nexus-*.AppImage
+   ```
+
+---
+
+## Development
+
+### Requirements
+
+| Tool | Version |
+|------|---------|
+| Flutter SDK | 3.x (stable channel) |
+| Dart SDK | bundled with Flutter |
+| Android: Java | 17 |
+| iOS/macOS: Xcode | 15+ |
+| Windows: Visual Studio | 2022 (Desktop C++ workload) |
+| Linux: GTK | `libgtk-3-dev` |
+
+### Quick Start
+
+```bash
+# 1. Clone
+git clone https://github.com/ajwadtahmid/ApexLegendsNexus.git
+cd ApexLegendsNexus
+
+# 2. Install dependencies
+flutter pub get
+
+# 3. Set up environment (see Configuration below)
+cp .env.example .env
+# edit .env with your values
+
+# 4. Generate env code
+dart run build_runner build --delete-conflicting-outputs
+
+# 5. Run
+flutter run
+```
+
+### Configuration
+
+The app proxies all API calls through a private server — it never calls the Apex API directly. Credentials are stored in a `.env` file and compiled into the binary using [envied](https://pub.dev/packages/envied) (XOR-obfuscated at build time, not plain text in the binary).
+
+```env
+# .env
+PROXY_URL=https://your-proxy-server.example.com
+CLIENT_TOKEN=your-secret-token
+```
+
+After editing `.env`, regenerate:
+
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
+
+> `lib/env/env.g.dart` is generated and gitignored. The app will not compile without it.
+
+### Project Structure
+
+```
+lib/
+├── constants/         # Shared constants (API keys, pref keys, rank ladder)
+├── env/               # Generated environment variables (gitignored)
+├── models/            # Data models (PlayerStats, MapRotation, ServerStatus…)
+├── providers/         # Riverpod providers and state notifiers
+├── screens/           # One folder per tab (home, stats, search, settings)
+├── services/          # API service, notification service, background service
+├── utils/             # Formatters, cache, storage, theme helpers
+└── widgets/           # Reusable UI components
+```
+
+### Architecture
+
+```
+UI (Screens/Widgets)
+       │
+       │ watches/reads
+       ▼
+  Riverpod Providers        ← state layer, caches AsyncValues
+       │
+       │ calls
+       ▼
+   ApiService (Dio)         ← single Dio instance, shared connection pool
+       │
+       │ HTTP
+       ▼
+   Proxy Server             ← never expose the real API key client-side
+       │
+       ▼
+  Apex Legends Status API   ← apexlegendsstatus.com
+```
+
+**State management:** Riverpod 3 (`Notifier` / `AsyncNotifier` pattern). Providers are invalidated on pull-to-refresh and on a per-screen auto-refresh timer configurable in Settings.
+
+**Caching:** `ApiCache` wraps `SharedPreferences` and stores each response alongside a timestamp. Stale entries (>24h) are ignored; fresh entries are returned immediately while a background refresh runs.
+
+**Persistence:** Player snapshots and legend stats accumulate across sessions. A snapshot is written at most every 30 minutes (deduplicated by RP). `computeDelta()` in `storage.dart` computes the rolling 24-hour RP change.
+
+**Notifications:** `flutter_local_notifications` schedules exact-time alerts. `background_fetch` reschedules them every 30 minutes so alerts stay accurate when the app is closed.
+
+### Building for Release
+
+```bash
+# Android (App Bundle for Play Store)
+flutter build appbundle --release
+
+# Android (standalone APK)
+flutter build apk --release --split-per-abi
+
+# iOS
+flutter build ios --release
+
+# Windows
+flutter build windows --release
+
+# Linux (AppImage is packaged by CI)
+flutter build linux --release
+```
+
+### CI / GitHub Actions
+
+Pushing a tag matching `v*` triggers the release workflow, which:
+
+1. Builds for Android (AAB + APK), Windows, and Linux in parallel
+2. Packages the Linux build as an AppImage
+3. Builds the Windows NSIS installer
+4. Creates a GitHub Release and attaches all artifacts
+
+---
+
+## Data & Privacy
+
+- **No login, no account.** All data is public (player stats are visible on apexlegendsstatus.com).
+- **No analytics or tracking.** The app does not collect or send any user data.
+- **Local-only storage.** Cached responses and snapshots are stored on-device only.
+- **Credential safety.** The proxy token is XOR-obfuscated at compile time — it is not visible as a plain string in the distributed binary.
+
+Data is sourced from [apexlegendsstatus.com](https://apexlegendsstatus.com) and [apexlegendsapi.com](https://apexlegendsapi.com).
+
+---
+
+## Contributing
+
+Pull requests are welcome.
+
+1. Fork the repo and create a branch: `git checkout -b feature/your-idea`
+2. Make changes and run `flutter analyze` — zero issues required
+3. Open a PR with a clear description of what changed and why
+
+For larger changes, open an issue first to align on direction before writing code.
+
+---
+
+## License
+
+[GNU General Public License v3.0](LICENSE)
